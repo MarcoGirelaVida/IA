@@ -35,6 +35,8 @@ class ComportamientoJugador : public Comportamiento{
     ComportamientoJugador(const ComportamientoJugador & comport) : Comportamiento(comport){}
     ~ComportamientoJugador(){}
 
+    void PonerTerrenoEnMatriz(const vector<unsigned char> terreno, const state current_state, vector< vector< unsigned char> > &mapaResultado, const short nivel);
+    
     Action think(Sensores sensores);
     int interact(Action accion, int valor);
 
@@ -43,6 +45,14 @@ class ComportamientoJugador : public Comportamiento{
   state current_state; Orientacion brujula;
   Action last_action;
   bool girar_derecha, bien_situado;
-  std::unordered_map<pair<unsigned, unsigned>, unsigned char> casillas_objetivo;
+
+  struct PairHash {
+    size_t operator()(const std::pair<unsigned int, unsigned int>& p) const {
+      // Combine hash values using bitwise XOR or other suitable method
+      return std::hash<unsigned int>()(p.first) ^ std::hash<unsigned int>()(p.second);
+    }
+  };
+
+  std::unordered_map<std::pair<unsigned int, unsigned int>, unsigned char, PairHash> casillas_objetivo;
 };
 #endif

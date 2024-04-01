@@ -3,23 +3,25 @@
 using namespace std;
 
 #include <cstdlib> // Add missing include directive for the 'cstdlib' library
-void PonerTerrenoEnMatriz(const vector<unsigned char> terreno, const state current_state, vector< vector< unsigned char> > &mapaResultado)
+
+void ComportamientoJugador::PonerTerrenoEnMatriz(const vector<unsigned char> terreno, const state current_state, vector< vector< unsigned char> > &mapaResultado, const short nivel)
 {
 	const vector<pair<short, short>> pos_norte = { {0, 0}, {-1, -1}, {-1, 0}, {-1, 1}, {-2, -2}, {-2, -1}, {-2, 0}, {-2, 1}, {-2, 2}, {-3, -3}, {-3, -2}, {-3, -1}, {-3, 0}, {-3, 1}, {-3, 2}, {-3, 3} };
 	const vector<pair<short, short>> pos_noreste = { {0, 0}, {-1, 0}, {-1, 1}, {0, 1}, {-2, 0}, {-2, 1}, {-2, 2}, {-1, 2}, {0, 2}, {-3, 0}, {-3, 1}, {-3, 2}, {-3, 3}, {-2, 3}, {-1, 3}, {0, 3} };
-	vector<pair<short, short>> vector_pos;
-	short posfil, poscol;
+	vector<pair<short, short>> vector_pos = pos_noreste;
+	short posfil = -1, poscol = -1;
+	bool swap = false;
 
 	switch (current_state.brujula)
 	{
-	case norte: 	posfil = 1; 	poscol = 1;		vector_pos = pos_norte; 	break;
-	case noreste: 	posfil = 1; 	poscol = 1; 	vector_pos = pos_noreste; 	break;
-	case este: 		posfil = -1; 	poscol = 1;		vector_pos = pos_norte;		break;
-	case sureste: 	posfil = -1; 	poscol = 1; 	vector_pos = pos_noreste;	break;
-	case sur: 		posfil = -1; 	poscol = -1; 	vector_pos = pos_norte;		break;
-	case suroeste: 	posfil = -1; 	poscol = -1; 	vector_pos = pos_noreste;	break;
-	case oeste: 	posfil = 1; 	poscol = -1; 	vector_pos = pos_norte;		break;
-	case noroeste: 	posfil = 1; 	poscol = -1; 	vector_pos = pos_noreste; 	break;
+	case norte: 	posfil = 1; 	poscol = 1;		vector_pos = pos_norte; 	swap = false;	break;
+	case noreste: 	posfil = 1; 	poscol = 1; 	vector_pos = pos_noreste; 	swap = false;	break;
+	case oeste: 	posfil = 1; 	poscol = -1; 	vector_pos = pos_norte;		swap = true;	break;
+	case noroeste: 	posfil = 1; 	poscol = -1; 	vector_pos = pos_noreste; 	swap = true;	break;
+	case este: 		posfil = -1; 	poscol = 1;		vector_pos = pos_norte;		swap = true;	break;
+	case sureste: 	posfil = -1; 	poscol = 1; 	vector_pos = pos_noreste;	swap = true;	break;
+	case sur: 		posfil = -1; 	poscol = -1; 	vector_pos = pos_norte;		swap = false;	break;
+	case suroeste: 	posfil = -1; 	poscol = -1; 	vector_pos = pos_noreste;	swap = false;	break;
 	}
 
 	for (size_t i = 0; i < 16; i++)
@@ -95,7 +97,8 @@ Action ComportamientoJugador::think(Sensores sensores)
 
 	if (bien_situado)
 	{
-		PonerTerrenoEnMatriz(sensores.terreno, current_state, mapaResultado);
+		cout << "Se ha entrado en poner terreno" << endl;
+		PonerTerrenoEnMatriz(sensores.terreno, current_state, mapaResultado, sensores.nivel);
 	}
 	
 	// Decidir nueva acción
@@ -149,3 +152,171 @@ int ComportamientoJugador::interact(Action accion, int valor)
 {
 	return false;
 }
+/*
+void ComportamientoJugador::PonerTerrenoEnMatriz(const vector<unsigned char> terreno, const state st, vector< vector< unsigned char> > &matriz, const Sensores sensores)
+{
+	switch (st.brujula){
+		case norte:
+			matriz[st.fil][st.col] = terreno[0];
+			matriz[st.fil-1][st.col-1] = terreno[1];
+			matriz[st.fil-1][st.col] = terreno[2];
+			matriz[st.fil-1][st.col+1] = terreno[3];
+			matriz[st.fil-2][st.col-2] = terreno[4];
+			matriz[st.fil-2][st.col-1] = terreno[5];
+			matriz[st.fil-2][st.col+1] = terreno[7];
+			matriz[st.fil-2][st.col+2] = terreno[8];
+			matriz[st.fil-3][st.col-3] = terreno[9];
+			matriz[st.fil-3][st.col-2] = terreno[10];
+			if(sensores.nivel!=3){
+				matriz[st.fil-2][st.col] = terreno[6];
+				matriz[st.fil-3][st.col-1] = terreno[11];
+				matriz[st.fil-3][st.col] = terreno[12];
+				matriz[st.fil-3][st.col+1] = terreno[13];
+			}
+			matriz[st.fil-3][st.col+2] = terreno[14];
+			matriz[st.fil-3][st.col+3] = terreno[15];
+			break;
+		case noreste:
+			matriz[st.fil][st.col] = terreno[0];
+			matriz[st.fil-1][st.col] = terreno[1];
+			matriz[st.fil-1][st.col+1] = terreno[2];
+			matriz[st.fil][st.col+1] = terreno[3];
+			matriz[st.fil-2][st.col] = terreno[4];
+			matriz[st.fil-2][st.col+1] = terreno[5];
+			matriz[st.fil-1][st.col+2] = terreno[7];
+			matriz[st.fil][st.col+2] = terreno[8];
+			matriz[st.fil-3][st.col] = terreno[9];
+			matriz[st.fil-3][st.col+1] = terreno[10];
+			if(sensores.nivel!=3){
+				matriz[st.fil-2][st.col+2] = terreno[6];
+				matriz[st.fil-3][st.col+2] = terreno[11];
+				matriz[st.fil-3][st.col+3] = terreno[12];
+				matriz[st.fil-2][st.col+3] = terreno[13];
+			}
+			matriz[st.fil-1][st.col+3] = terreno[14];
+			matriz[st.fil][st.col+3] = terreno[15]; 	
+			break;
+		case este:
+			matriz[st.fil][st.col] = terreno[0];
+			matriz[st.fil-1][st.col+1] = terreno[1];
+			matriz[st.fil][st.col+1] = terreno[2];
+			matriz[st.fil+1][st.col+1] = terreno[3];
+			matriz[st.fil-2][st.col+2] = terreno[4];
+			matriz[st.fil-1][st.col+2] = terreno[5];
+			matriz[st.fil+1][st.col+2] = terreno[7];
+			matriz[st.fil+2][st.col+2] = terreno[8];
+			matriz[st.fil-3][st.col+3] = terreno[9];
+			matriz[st.fil-2][st.col+3] = terreno[10];
+			if(sensores.nivel!=3){
+				matriz[st.fil][st.col+2] = terreno[6];
+				matriz[st.fil-1][st.col+3] = terreno[11];
+				matriz[st.fil][st.col+3] = terreno[12];
+				matriz[st.fil+1][st.col+3] = terreno[13];
+			}
+			matriz[st.fil+2][st.col+3] = terreno[14];
+			matriz[st.fil+3][st.col+3] = terreno[15];
+			break;
+		case sureste: 
+			matriz[st.fil][st.col] = terreno[0];
+			matriz[st.fil][st.col+1] = terreno[1];
+			matriz[st.fil+1][st.col+1] = terreno[2];
+			matriz[st.fil+1][st.col] = terreno[3];
+			matriz[st.fil][st.col+2] = terreno[4];
+			matriz[st.fil+1][st.col+2] = terreno[5];
+			matriz[st.fil+2][st.col+1] = terreno[7];
+			matriz[st.fil+2][st.col] = terreno[8];
+			matriz[st.fil][st.col+3] = terreno[9];
+			matriz[st.fil+1][st.col+3] = terreno[10];
+			if(sensores.nivel!=3){
+				matriz[st.fil+2][st.col+2] = terreno[6];
+				matriz[st.fil+2][st.col+3] = terreno[11];
+				matriz[st.fil+3][st.col+3] = terreno[12];
+				matriz[st.fil+3][st.col+2] = terreno[13];
+			}
+			matriz[st.fil+3][st.col+1] = terreno[14];
+			matriz[st.fil+3][st.col] = terreno[15];
+			break;
+		case sur: 
+			matriz[st.fil][st.col] = terreno[0];
+			matriz[st.fil+1][st.col+1] = terreno[1];
+			matriz[st.fil+1][st.col] = terreno[2];
+			matriz[st.fil+1][st.col-1] = terreno[3];
+			matriz[st.fil+2][st.col+2] = terreno[4];
+			matriz[st.fil+2][st.col+1] = terreno[5];
+			matriz[st.fil+2][st.col-1] = terreno[7];
+			matriz[st.fil+2][st.col-2] = terreno[8];
+			matriz[st.fil+3][st.col+3] = terreno[9];
+			matriz[st.fil+3][st.col+2] = terreno[10];
+			if(sensores.nivel!=3){
+				matriz[st.fil+2][st.col] = terreno[6];
+				matriz[st.fil+3][st.col+1] = terreno[11];
+				matriz[st.fil+3][st.col] = terreno[12];
+				matriz[st.fil+3][st.col-1] = terreno[13];
+			}
+			
+			matriz[st.fil+3][st.col-2] = terreno[14];
+			matriz[st.fil+3][st.col-3] = terreno[15];
+			break;
+		case suroeste: 
+			matriz[st.fil][st.col] = terreno[0];
+			matriz[st.fil+1][st.col] = terreno[1];
+			matriz[st.fil+1][st.col-1] = terreno[2];
+			matriz[st.fil][st.col-1] = terreno[3];
+			matriz[st.fil+2][st.col] = terreno[4];
+			matriz[st.fil+2][st.col-1] = terreno[5];
+			matriz[st.fil+1][st.col-2] = terreno[7];
+			matriz[st.fil][st.col-2] = terreno[8];
+			matriz[st.fil+3][st.col] = terreno[9];
+			matriz[st.fil+3][st.col-1] = terreno[10];
+			if(sensores.nivel!=3){
+				matriz[st.fil+2][st.col-2] = terreno[6];
+				matriz[st.fil+3][st.col-2] = terreno[11];
+				matriz[st.fil+3][st.col-3] = terreno[12];
+				matriz[st.fil+2][st.col-3] = terreno[13];
+			}
+			matriz[st.fil+1][st.col-3] = terreno[14];
+			matriz[st.fil][st.col-3] = terreno[15];
+			break;
+		case oeste: 
+			matriz[st.fil][st.col] = terreno[0];
+			matriz[st.fil+1][st.col-1] = terreno[1];
+			matriz[st.fil][st.col-1] = terreno[2];
+			matriz[st.fil-1][st.col-1] = terreno[3];
+			matriz[st.fil+2][st.col-2] = terreno[4];
+			matriz[st.fil+1][st.col-2] = terreno[5];
+			matriz[st.fil-1][st.col-2] = terreno[7];
+			matriz[st.fil-2][st.col-2] = terreno[8];
+			matriz[st.fil+3][st.col-3] = terreno[9];
+			matriz[st.fil+2][st.col-3] = terreno[10];
+			if(sensores.nivel!=3){
+				matriz[st.fil][st.col-2] = terreno[6];
+				matriz[st.fil+1][st.col-3] = terreno[11];
+				matriz[st.fil][st.col-3] = terreno[12];
+				matriz[st.fil-1][st.col-3] = terreno[13];
+			}
+			matriz[st.fil-2][st.col-3] = terreno[14];
+			matriz[st.fil-3][st.col-3] = terreno[15];
+			break;
+		case noroeste: 
+			matriz[st.fil][st.col] = terreno[0];
+			matriz[st.fil][st.col-1] = terreno[1];
+			matriz[st.fil-1][st.col-1] = terreno[2];
+			matriz[st.fil-1][st.col] = terreno[3];
+			matriz[st.fil][st.col-2] = terreno[4];
+			matriz[st.fil-1][st.col-2] = terreno[5];
+			matriz[st.fil-2][st.col-1] = terreno[7];
+			matriz[st.fil-2][st.col] = terreno[8];
+			matriz[st.fil][st.col-3] = terreno[9];
+			matriz[st.fil-1][st.col-3] = terreno[10];
+			if(sensores.nivel!=3){
+				matriz[st.fil-2][st.col-2] = terreno[6];
+				matriz[st.fil-2][st.col-3] = terreno[11];
+				matriz[st.fil-3][st.col-3] = terreno[12];
+				matriz[st.fil-3][st.col-2] = terreno[13];
+			}
+			matriz[st.fil-3][st.col-1] = terreno[14];
+			matriz[st.fil-3][st.col] = terreno[15];
+			break;
+	}
+}
+*/
