@@ -4,14 +4,80 @@ using namespace std;
 
 #include <cstdlib> // Add missing include directive for the 'cstdlib' library
 
+bool ComportamientoJugador::es_casilla_interesante(const casilla c, const vector< vector< unsigned char> > &mapaResultado)
+{
+	switch (mapaResultado[c.first][c.second])
+	{
+	// Casilla de ubicación
+	case '':
+		casillas_interesantes.emplace(c, 3);
+		break;
+
+	// Bikini
+	case '':
+		casillas_interesantes.emplace(c, 2);
+		break;
+
+	// Zapatillas
+	case '':
+		casillas_interesantes.emplace(c, 1);
+		break;
+
+	default:
+		return false;
+	}
+
+	return true; 
+}
+
+bool ComportamientoJugador::es_casilla_desconocida(const casilla c, const vector< vector< unsigned char> > &mapaResultado)
+{
+	if (mapaResultado[c.first][c.second] == '?')
+	{
+		casillas_desconocidas.push(c);
+		return true;
+	}
+
+	return false;
+}
+
+bool ComportamientoJugador::buscar_casillas_interesantes_perimetro(const unsigned char perimetro, const casilla posicion, const vector< vector<unsigned char>>& mapaResultado)
+{
+	bool encontrada = false;
+	for (size_t i = (posicion.first - perimetro); i < (posicion.first + perimetro); i++)
+	{
+		for (size_t j = (posicion.second - perimetro); j < (posicion.second + perimetro); j++)
+		{
+			if (es_casilla_interesante(make_pair(i, j), mapaResultado))
+				encontrada = true;
+			else if (es_casilla_desconocida(make_pair(i, j), mapaResultado))
+				encontrada = true;
+		}
+	}
+
+	return encontrada;
+}
+
+void ComportamientoJugador::generar_mapa_potencial_parcial(const unsigned char radio, const casilla posicion, const vector< vector<unsigned char>>& mapaPotencial)
+{
+
+}
+
+template <typename T>
+void ComportamientoJugador::trasladar_mapa(vector< vector<T>>& base, const vector< vector<T>>& objetivo)
+{
+	
+}
+
 void ComportamientoJugador::PonerTerrenoEnMatriz(const vector<unsigned char> terreno, const state current_state, vector< vector< unsigned char> > &mapaResultado, const short nivel)
 {
 	const vector<pair<short, short>> pos_norte = { {0, 0}, {-1, -1}, {-1, 0}, {-1, 1}, {-2, -2}, {-2, -1}, {-2, 0}, {-2, 1}, {-2, 2}, {-3, -3}, {-3, -2}, {-3, -1}, {-3, 0}, {-3, 1}, {-3, 2}, {-3, 3} };
 	const vector<pair<short, short>> pos_noreste = { {0, 0}, {-1, 0}, {-1, 1}, {0, 1}, {-2, 0}, {-2, 1}, {-2, 2}, {-1, 2}, {0, 2}, {-3, 0}, {-3, 1}, {-3, 2}, {-3, 3}, {-2, 3}, {-1, 3}, {0, 3} };
 	vector<pair<short, short>> vector_pos = pos_noreste;
-	short posfil = -1, poscol = -1;
-	bool swap = false;
+	short posfil, poscol;
+	bool swap;
 
+	cout << "Brujula: " << current_state.brujula << endl;
 	switch (current_state.brujula)
 	{
 	case norte: 	posfil = 1; 	poscol = 1;		vector_pos = pos_norte; 	swap = false;	break;
@@ -26,21 +92,13 @@ void ComportamientoJugador::PonerTerrenoEnMatriz(const vector<unsigned char> ter
 
 	for (size_t i = 0; i < 16; i++)
 	 {
-		unsigned fil = current_state.fil + vector_pos[i].first*posfil;
-		unsigned col = current_state.col + vector_pos[i].second*poscol;
-		if (terreno[i] == 'G' || terreno[i] == 'B' || terreno[i] == 'R' || terreno[i] == 'Z')
-			casillas_objetivo[{fil, col}] = terreno[i];
-		else
-			casillas_objetivo.erase({fil, col});
+		short posfil_tmp = swap ? vector_pos[i].second * poscol : vector_pos[i].first * poscol;
+		short poscol_tmp = swap ? vector_pos[i].first * posfil : vector_pos[i].second * posfil;
 
-		mapaResultado[fil][col] = terreno[i];
+		mapaResultado[current_state.fil + posfil_tmp][current_state.col + poscol_tmp] = terreno[i];
 	 }
 }
 
-void GenerarMapaPotencial (const unordered_map<pair<unsigned, unsigned>, unsigned char> casillas_objetivo, vector<vector<unsigned char>> & mapaResultado)
-{
-	queue<pair<unsigned, unsigned>> restantes;
-}
 Action ComportamientoJugador::think(Sensores sensores)
 {
 	Action accion = actIDLE;	
