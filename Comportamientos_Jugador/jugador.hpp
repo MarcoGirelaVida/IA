@@ -27,8 +27,14 @@ class ComportamientoJugador : public Comportamiento
       current_state.col = 99;
       current_state.brujula = norte;
 
-      girar_derecha = false;
-      bien_situado = false;
+      ubicado = false;
+
+      mapa_resultado_temporal[mapaResultado.size()*2][mapaResultado.size()*2];
+      mapa_actual = &mapa_resultado_temporal;
+
+      fake_state.fil = mapa_resultado_temporal.size() / 2;
+      fake_state.col = fake_state.fil;
+      fake_state.brujula = norte;
     }
 
     ComportamientoJugador(const ComportamientoJugador & comport) : Comportamiento(comport){}
@@ -39,18 +45,18 @@ class ComportamientoJugador : public Comportamiento
     Action think(Sensores sensores);
     int interact(Action accion, int valor);
 
-    bool es_casilla_interesante(const casilla c, const vector< vector< unsigned char> > &mapaResultado);
-    bool es_casilla_desconocida(const casilla c, const vector< vector< unsigned char> > &mapaResultado);
-    bool buscar_casillas_interesantes_perimetro(const unsigned char perimetro, const casilla posicion, const vector< vector<unsigned char>>& mapaResultado);
-    void generar_mapa_potencial_parcial(const unsigned char radio, const casilla posicion, const vector< vector<unsigned char>>& mapaPotencial);
+    bool es_casilla_interesante(const casilla c);
+    bool es_casilla_desconocida(const casilla c);
+    bool buscar_casillas_interesantes_perimetro(const unsigned char perimetro);
+    void generar_mapa_potencial_parcial(const unsigned char radio);
     template <typename T>
     void trasladar_mapa(vector< vector<T>>& base, const vector< vector<T>>& objetivo);
 
   private:
   // Declarar aquí las variables de estado
-  state current_state; Orientacion brujula;
+  state current_state, fake_state; Orientacion brujula;
   Action last_action;
-  bool girar_derecha, bien_situado;
+  bool ubicado;
 
 /*
   struct PairHash {
@@ -67,7 +73,9 @@ class ComportamientoJugador : public Comportamiento
   vector< vector< unsigned char> > mapa_resultado_temporal;
   vector< vector< unsigned short> > mapa_potencial_temporal;
   vector< vector< unsigned short> > mapa_potencial;
+  vector< vector< unsigned short> > mapa_decision;
 
+  vector< vector< unsigned char> > *mapa_actual;
 };
 
 #endif
