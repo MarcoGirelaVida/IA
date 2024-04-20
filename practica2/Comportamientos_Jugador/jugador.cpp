@@ -5,6 +5,153 @@
 #include <cmath>
 #include <set>
 #include <stack>
+#include <queue>
+#include "jugador.hpp"
+
+template<typename T>
+bool esta_en_cola(const queue<T> &q, const T n)
+{
+	queue<T> q_copy = q;
+	while (!q_copy.empty())
+	{
+		if (q_copy.front() == n)
+			return true;
+		q_copy.pop();
+	}
+	return false;
+}
+
+bool ComportamientoJugador::esta_en_mapa(const int fil, const int col) const
+{
+	return fil >= 0 and fil < mapaResultado.size() and col >= 0 and col < mapaResultado[0].size();
+}
+
+bool ComportamientoJugador::esta_en_mapa(const estado &st) const
+{
+	return st.fila >= 0 and st.fila < mapaResultado.size() and st.columna >= 0 and st.columna < mapaResultado[0].size();
+}
+
+bool ComportamientoJugador::es_solucion(const nodo& n) const
+{
+	return n.st.fila == objetivo.fila and n.st.columna == objetivo.columna;
+}
+
+bool ComportamientoJugador::casilla_valida(const unsigned char casilla) const
+{
+	return casilla != 'P' and casilla != 'M';
+}
+
+pair<int, int> ComportamientoJugador::traductor_posicion(const int offset_fil, const int offset_col) const
+{
+	short posfil, poscol;
+	bool swap;
+
+	switch (actual.orientacion)
+	{
+	case norte: 	posfil = 1; 	poscol = 1;		swap = false;	break;
+	case noreste: 	posfil = 1; 	poscol = 1; 	swap = false;	break;
+	case oeste: 	posfil = 1; 	poscol = -1; 	swap = true;	break;
+	case noroeste: 	posfil = 1; 	poscol = -1; 	swap = true;	break;
+	case este: 		posfil = -1; 	poscol = 1;		swap = true;	break;
+	case sureste: 	posfil = -1; 	poscol = 1; 	swap = true;	break;
+	case sur: 		posfil = -1; 	poscol = -1; 	swap = false;	break;
+	case suroeste: 	posfil = -1; 	poscol = -1; 	swap = false;	break;
+	}
+
+	short posfil_tmp = swap ? offset_col * poscol : offset_fil * poscol;
+	short poscol_tmp = swap ? offset_fil * posfil : offset_col * posfil;
+
+	return make_pair(actual.fila + posfil_tmp, actual.columna + poscol_tmp);
+}
+
+void ComportamientoJugador::registra_secuencia(unsigned char decision, nodo &n) const
+{
+	if (actual.orientacion == noreste || actual.orientacion == sureste || actual.orientacion == suroeste || actual.orientacion == noroeste)
+	{
+		switch (decision)
+		{
+		case 0: decision = 3; break;
+		case 1: decision = 0; break;
+		case 2: decision = 1; break;
+		case 3: decision = 6; break;
+		case 5: decision = 2; break;
+		case 6: decision = 7; break;
+		case 7: decision = 8; break;
+		case 8: decision = 5; break;
+		}
+	}
+	
+	switch (decision)
+	{
+	case 0: n.secuencia.push_back(actTURN_L); n.secuencia.push_back(actTURN_R);
+	case 1: n.secuencia.push_back(actFORWARD);
+	case 2: n.secuencia.push_back(actTURN_R);
+	case 3: n.secuencia.push_back(actTURN_L);
+	case 4: n.secuencia.push_back(actIDLE);
+	case 5: n.secuencia.push_back(actTURN_R); n.secuencia.push_back(actTURN_R);
+	case 6: n.secuencia.push_back(actTURN_L); n.secuencia.push_back(actTURN_L); n.secuencia.push_back(actTURN_R);
+	case 7: n.secuencia.push_back(actTURN_L); n.secuencia.push_back(actTURN_L);
+	case 8: n.secuencia.push_back(actTURN_R); n.secuencia.push_back(actTURN_R); n.secuencia.push_back(actTURN_R);
+	}
+}
+
+list<nodo> ComportamientoJugador::acciones_validas(const nodo& n) const
+{
+	list<nodo> decisiones_validas;
+	
+	int decision = 0;
+	for (int i = -1; i < 2; i++)
+	{
+		for (int j = -1; j < 2; j++)
+		{
+			if (i or j)
+			{
+				nodo hijo = n;
+				hijo.st.fila += i;
+				hijo.st.columna += j;
+
+				if (esta_en_mapa(hijo.st) and !casilla_valida(mapaResultado[hijo.st.fila][hijo.st.columna]))
+				{
+					registra_secuencia(decision, hijo);
+					decisiones_validas.push_back(hijo);
+				}
+			}
+			decision++;
+		}
+	}
+
+	return decisiones_validas;
+}
+
+list<Action> ComportamientoJugador::breadth_1st_search()
+{
+	nodo nodo_actual = {actual, {}};
+	queue<nodo> frontera;
+	set<nodo> explorados;
+	frontera.push(nodo_actual);
+
+	while (!frontera.empty() and !es_solucion(nodo_actual))
+	{
+		frontera.pop();
+		explorados.insert(nodo_actual);
+
+		for (const nodo& hijo : acciones_validas(nodo_actual))
+		{
+			if (es_solucion(hijo))
+				nodo_actual = hijo;
+			else if (explorados.find(hijo) == explorados.cend() && !esta_en_cola(frontera, hijo))
+				frontera.push(hijo);
+		}
+
+		if (!es_solucion(nodo_actual))
+			nodo_actual = frontera.front();
+	}
+
+	if (es_solucion(nodo_actual))
+		return nodo_actual.secuencia;
+	else
+		return {};
+}
 
 // Este es el método principal que se piden en la practica.
 // Tiene como entrada la información de los sensores y devuelve la acción a realizar.
@@ -13,6 +160,28 @@ Action ComportamientoJugador::think(Sensores sensores)
 {
 	Action accion = actIDLE;
 
+	if (!hayPlan)
+	{
+		// Invocar al método de búsqueda
+		cerr << "Calculamos un nuevo plan" << endl;
+		plan = breadth_1st_search();
+		hayPlan = true;
+	}
+
+	if (hayPlan and plan.size() > 0)
+	{
+		accion = plan.front();
+		plan.pop_front();
+	}
+
+	if (plan.size() == 0)
+	{
+		cerr << "He terminado el plan" << endl;
+		hayPlan = false;
+	}
+
+	return accion;
+	/*
 	actual.fila = sensores.posF;
 	actual.columna = sensores.posC;
 	actual.orientacion = sensores.sentido;
@@ -35,6 +204,7 @@ Action ComportamientoJugador::think(Sensores sensores)
 	bool hay_plan = pathFinding(sensores.nivel, actual, objetivos, plan);
 
 	return accion;
+	*/
 }
 
 // Llama al algoritmo de busqueda que se usara en cada comportamiento del agente
@@ -146,12 +316,6 @@ bool ComportamientoJugador::HayObstaculoDelante(estado &st)
 		return true;
 	}
 }
-
-struct nodo
-{
-	estado st;
-	list<Action> secuencia;
-};
 
 struct ComparaEstados
 {

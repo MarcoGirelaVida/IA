@@ -5,18 +5,58 @@
 
 #include <list>
 
-struct estado {
+struct estado
+{
   int fila;
   int columna;
   int orientacion;
 };
 
-class ComportamientoJugador : public Comportamiento {
+struct nodo
+{
+	estado st;
+	list<Action> secuencia;
+
+  bool operator==(const nodo &n) const
+  {
+    return st.fila == n.st.fila && st.columna == n.st.columna && st.orientacion == n.st.orientacion;
+  }
+};
+
+
+class ComportamientoJugador : public Comportamiento
+{
   public:
-    ComportamientoJugador(unsigned int size) : Comportamiento(size) {
+    ComportamientoJugador(unsigned int size) : Comportamiento(size)
+    {
+      hayPlan = false;
+      /*
       // Inicializar Variables de Estado
+      // Inicializo el estado actual
+      actual.fila = 0;
+      actual.columna = 0;
+      actual.orientacion = 0;
+
+      // Inicializo el vector de objetivos
+      objetivos.push_back(actual);
+
+      // Inicializo el plan
+      plan.clear();
+      hayPlan = false;
+
+      // Inicializo el mapaConPlan
+      mapaConPlan.resize(200, vector<unsigned char>(200, 0));
+
+      // Inicializo el mapaResultado
+      mapaResultado.resize(200, vector<unsigned char>(200, '?'));
+
+      // Inicializo el mapaVisitados
+      mapaVisitados.resize(200, vector<unsigned char>(200, 0));
+      */
     }
-    ComportamientoJugador(std::vector< std::vector< unsigned char> > mapaR) : Comportamiento(mapaR) {
+
+    ComportamientoJugador(std::vector< std::vector< unsigned char> > mapaR) : Comportamiento(mapaR)
+    {
       // Inicializar Variables de Estado
     }
     ComportamientoJugador(const ComportamientoJugador & comport) : Comportamiento(comport){}
@@ -29,9 +69,20 @@ class ComportamientoJugador : public Comportamiento {
 
   private:
     // Declarar Variables de Estado
-    estado actual;
+    estado actual, objetivo;
     list<estado> objetivos;
     list<Action> plan;
+
+    bool hayPlan;
+
+    bool esta_en_mapa(const int fil, const int col) const;
+    bool esta_en_mapa(const estado &st) const;
+    bool es_solucion(const nodo &n) const;
+    bool casilla_valida(const unsigned char tile) const;
+    pair <int, int> traductor_posicion(const int offset_fil, const int offset_col) const;
+    void registra_secuencia(unsigned char decision, nodo &n) const;
+    list<nodo> acciones_validas(const nodo& n) const;
+    list<Action> breadth_1st_search();
 
     // Métodos privados de la clase
     bool pathFinding(int level, const estado &origen, const list<estado> &destino, list<Action> &plan);
