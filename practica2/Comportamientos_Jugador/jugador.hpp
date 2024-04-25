@@ -5,22 +5,31 @@
 
 #include <list>
 
+struct ubicacion {
+  int f;
+  int c;
+  Orientacion brujula;
+  
+  bool operator==(const ubicacion &ub) const {
+    return (f == ub.f and c == ub.c and brujula == ub.brujula);
+  }
+};
 struct estado
 {
-  int fila;
-  int columna;
-  int orientacion;
+  ubicacion jugador;
+  ubicacion colaborador;
+  Action ultima_orden_colaborador;
+
+  bool operator==(const estado& otro) const
+  {
+    return (jugador == otro.jugador and colaborador.f == otro.colaborador.f and colaborador.c == otro.colaborador.c);
+  }
 };
 
 struct nodo
 {
 	estado st;
 	list<Action> secuencia;
-
-  bool operator==(const nodo &n) const
-  {
-    return st.fila == n.st.fila && st.columna == n.st.columna && st.orientacion == n.st.orientacion;
-  }
 };
 
 
@@ -30,6 +39,7 @@ class ComportamientoJugador : public Comportamiento
     ComportamientoJugador(unsigned int size) : Comportamiento(size)
     {
       hayPlan = false;
+      estado estado_actual = { {0, 0, norte}, {0, 0, norte}, actIDLE };
       /*
       // Inicializar Variables de Estado
       // Inicializo el estado actual
@@ -58,6 +68,8 @@ class ComportamientoJugador : public Comportamiento
     ComportamientoJugador(std::vector< std::vector< unsigned char> > mapaR) : Comportamiento(mapaR)
     {
       // Inicializar Variables de Estado
+      hayPlan = false;
+      estado estado_actual = { {0, 0, norte}, {0, 0, norte}, actIDLE };
     }
     ComportamientoJugador(const ComportamientoJugador & comport) : Comportamiento(comport){}
     ~ComportamientoJugador(){}

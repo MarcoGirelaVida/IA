@@ -245,6 +245,43 @@ bool ComportamientoJugador::pathFinding(int level, const estado &origen, const l
 	return false;
 }
 
+//---------------------- Implementación de la busqueda en anchura ---------------------------
+bool anchura_solo_jugador (const estado &inicio, const ubicacion &final, const vector<vector<unsigned char>> &mapa)
+{
+	estado current_state = inicio;
+	list<estado> frontier;
+	list<estado> explored;
+	bool solution_found = current_state.jugador.f == final.f and current_state.jugador.c == final.c;
+
+	while (!frontier.empty() and !solution_found)
+	{
+		frontier.pop_front();
+		explored.push_back(current_state);
+
+		// Hijo de andar
+		vector<Action> actions = {actFORWARD, actTURN_L, actTURN_R};
+
+		estado child;
+		for (const auto &action : actions)
+		{
+			child = apply(action, current_state, mapa);
+
+			if (child.jugador.f == final.f and child.jugador.c == final.c)
+			{
+				current_state = child;
+				solution_found = true;
+				break;
+			}
+			else if (!Find(child, frontier) and !Find(child, explored))
+				frontier.push_back(child);
+		}
+
+		if (!solution_found and !frontier.empty())
+			current_state = frontier.front();
+	}	
+
+	return solution_found;
+}
 //---------------------- Implementación de la busqueda en profundidad ---------------------------
 
 // Dado el codigo en caracter de una casilla del mapa dice si se puede
