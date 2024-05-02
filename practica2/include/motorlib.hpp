@@ -8,9 +8,8 @@ extern MonitorJuego monitor;
 
 struct EnLinea{
   list<pair<int,int>> listaObjetivos;
-  int fil_inicial;
-  int col_inicial;
-  int ori_inicial;
+  ubicacion posInicialJugador;
+  ubicacion posInicialColaborador;
   string ubicacion_mapa;
   int semilla;
   int level;

@@ -2,38 +2,41 @@
 
 #include <fstream>
 
-void MonitorJuego::cambiarOrientacion(unsigned char entidad, unsigned char orientacion) {
+void MonitorJuego::cambiarOrientacion(unsigned char entidad, unsigned char orientacion)
+{
   Orientacion aux;
-  switch (orientacion) {
-    case 0:
-    	aux = norte;
-    	break;
-    case 1:
-    	aux = noreste;
-    	break;
-    case 2:
-    	aux = este;
-    	break;
-    case 3:
-    	aux = sureste;
-    	break;
-    case 4:
-    	aux = sur;
-    	break;
-    case 5:
-    	aux = suroeste;
-    	break;
-    case 6:
-    	aux = oeste;
-    	break;
-    case 7:
-    	aux = noroeste;
-    	break;
+  switch (orientacion)
+  {
+  case 0:
+    aux = norte;
+    break;
+  case 1:
+    aux = noreste;
+    break;
+  case 2:
+    aux = este;
+    break;
+  case 3:
+    aux = sureste;
+    break;
+  case 4:
+    aux = sur;
+    break;
+  case 5:
+    aux = suroeste;
+    break;
+  case 6:
+    aux = oeste;
+    break;
+  case 7:
+    aux = noroeste;
+    break;
   }
   entidades[entidad]->setOrientacion(aux);
 }
 
-void MonitorJuego::setMapa(const char * file) {
+void MonitorJuego::setMapa(const char *file)
+{
   ifstream ifile;
   ifile.open(file, ios::in);
 
@@ -41,15 +44,18 @@ void MonitorJuego::setMapa(const char * file) {
   ifile >> colSize;
   ifile >> filSize;
 
-  vector<vector<unsigned char> > mapAux;
+  vector<vector<unsigned char>> mapAux;
   vector<unsigned char> colAux(colSize);
 
-  for (unsigned int i = 0; i < filSize; i++) {
+  for (unsigned int i = 0; i < filSize; i++)
+  {
     mapAux.push_back(colAux);
   }
 
-  for (unsigned int i = 0; i < filSize; i++) {
-    for (unsigned int j = 0; j < colSize; j++) {
+  for (unsigned int i = 0; i < filSize; i++)
+  {
+    for (unsigned int j = 0; j < colSize; j++)
+    {
       ifile >> mapAux[i][j];
     }
   }
@@ -58,142 +64,161 @@ void MonitorJuego::setMapa(const char * file) {
   mapa = new Mapa(mapAux, &entidades);
 }
 
-bool MonitorJuego::inicializarJuego() {
+bool MonitorJuego::inicializarJuego()
+{
   bool aux = empezarJuego;
-  if (empezarJuego) {
-      empezarJuego = false;
-      resultados = false;
+  if (empezarJuego)
+  {
+    empezarJuego = false;
+    resultados = false;
   }
   return aux;
 }
 
-
-
-void MonitorJuego::generate_a_valid_cell(int &pos_fila, int &pos_col, int &ori){
+void MonitorJuego::generate_a_valid_cell(int &pos_fila, int &pos_col, int &ori)
+{
   pos_col = -1;
   pos_fila = -1;
   char celdaRand = '_';
-  do {
-    pos_fila = aleatorio(getMapa()->getNFils()-1);
-    pos_col = aleatorio(getMapa()->getNCols()-1);
+  do
+  {
+    pos_fila = aleatorio(getMapa()->getNFils() - 1);
+    pos_col = aleatorio(getMapa()->getNCols() - 1);
 
     celdaRand = getMapa()->getCelda(pos_fila, pos_col);
-  }
-  while( (celdaRand == 'P' or celdaRand == 'M') );
+  } while ((celdaRand == 'P' or celdaRand == 'M'));
   ori = aleatorio(7);
 }
 
-bool MonitorJuego::is_a_valid_cell_like_goal(int f, int c){
-  if (f < 0 or f>=getMapa()->getNFils()) return false;
-  if (c < 0 or c>=getMapa()->getNCols()) return false;
-  char cell = getMapa()->getCelda(f,c);
-  if (cell =='M' or cell =='P') return false;
+bool MonitorJuego::is_a_valid_cell_like_goal(int f, int c)
+{
+  if (f < 3 or f + 3 >= getMapa()->getNFils())
+    return false;
+  if (c < 3 or c + 3 >= getMapa()->getNCols())
+    return false;
+  char cell = getMapa()->getCelda(f, c);
+  if (cell == 'M' or cell == 'P')
+    return false;
   return true;
 }
 
-
-
-void MonitorJuego::generate_a_objetive(){
+void MonitorJuego::generate_a_objetive()
+{
   int pos_col = -1, pos_fila = -1;
   char celdaRand = '_';
-  do {
-    pos_fila = aleatorio(getMapa()->getNFils()-1);
-    pos_col = aleatorio(getMapa()->getNCols()-1);
+  do
+  {
+    pos_fila = aleatorio(getMapa()->getNFils() - 1);
+    pos_col = aleatorio(getMapa()->getNCols() - 1);
 
     celdaRand = getMapa()->getCelda(pos_fila, pos_col);
-  }
-  while( (celdaRand == 'P' or celdaRand == 'M') );
+  } while ((celdaRand == 'P' or celdaRand == 'M'));
 
-  pair<int,int> punto;
+  pair<int, int> punto;
   punto.first = pos_fila;
   punto.second = pos_col;
   objetivos.push_back(punto);
 }
 
-
-void MonitorJuego::put_a_new_objetivo_front(int fila, int columna){
-  pair<int,int> punto;
+void MonitorJuego::put_a_new_objetivo_front(int fila, int columna)
+{
+  pair<int, int> punto;
   punto.first = fila;
   punto.second = columna;
   objetivos.push_front(punto);
 }
 
-
 // Pasa de la lista de objetivos al vector de objetivos activos.
 // 'number' establece el número de objetivos que se fijan simultáneamente
-void MonitorJuego::put_active_objetivos(int number){
+void MonitorJuego::put_active_objetivos(int number)
+{
   vector<unsigned int> v;
 
-  if (mapa!=0){
-      while (objetivos.size()<number){
-        generate_a_objetive();
+  if (mapa != 0)
+  {
+    while (objetivos.size() < number)
+    {
+      generate_a_objetive();
+    }
+    for (int i = 0; i < number; i++)
+    {
+      auto it = objetivos.begin();
+      if(this->get_entidades()->size() > 1){
+      while((this->get_entidad(0)->getFil() == it->first and this->get_entidad(0)->getCol() == it->second) or
+            (this->get_entidad(1)->getFil() == it->first and this->get_entidad(1)->getCol() == it->second))
+        {
+          objetivos.erase(objetivos.begin());
+          it = objetivos.begin();
+        }
       }
-      for (int i=0; i<number; i++){
-        auto it=objetivos.begin();
-        v.push_back(it->first);
-        v.push_back(it->second);
-        objetivos.erase(objetivos.begin());
-      }
+      v.push_back(it->first);
+      v.push_back(it->second);
+      objetivos.erase(objetivos.begin());
+    }
   }
-  else {
-     v.push_back(3);
-     v.push_back(3);
+  else
+  {
+    v.push_back(3);
+    v.push_back(3);
   }
   objetivosActivos = v;
 }
 
+void MonitorJuego::get_n_active_objetivo(int n, int &posFila, int &posCol)
+{
 
-void MonitorJuego::get_n_active_objetivo (int n,int &posFila, int &posCol){
-  if (n<objetivosActivos.size()/2){
-    posFila = objetivosActivos[2*n];
-    posCol = objetivosActivos[2*n+1];
-  }
+    posFila = objetivosActivos[0];
+    posCol = objetivosActivos[1];
 }
 
-void MonitorJuego::set_n_active_objetivo (int n, int posFila, int posCol){
-  //if (n<objetivosActivos.size()/2){
-  if (n<3){
-    objetivosActivos[2*n] = posFila;
-    objetivosActivos[2*n+1] = posCol;
-  }
-  if (numero_entidades()>0)
+void MonitorJuego::set_n_active_objetivo(int n, int posFila, int posCol)
+{
+
+    objetivosActivos[0] = posFila;
+    objetivosActivos[1] = posCol;
+
+  if (numero_entidades() > 0)
     get_entidad(0)->setObjetivos(objetivosActivos);
 }
 
-bool MonitorJuego::there_are_active_objetivo(){
-  return (objetivosActivos.size()>0);
+bool MonitorJuego::there_are_active_objetivo()
+{
+  return (objetivosActivos.size() > 0);
 }
 
-int MonitorJuego::get_number_active_objetivos(){
-  return (objetivosActivos.size()/2);
+int MonitorJuego::get_number_active_objetivos()
+{
+  return (objetivosActivos.size() / 2);
 }
 
-
-vector<unsigned int> MonitorJuego::get_active_objetivos(){
+vector<unsigned int> MonitorJuego::get_active_objetivos()
+{
   vector<unsigned int> copia = objetivosActivos;
   return copia;
 }
 
-
-
-
-void MonitorJuego::decPasos() {
-  if (get_entidad(0)->fin()) {
-    if (nivel < 4) {
+void MonitorJuego::decPasos()
+{
+  if (get_entidad(0)->fin())
+  {
+    if (nivel < 4)
+    {
       jugando = false;
       resultados = true;
     }
-    else {
+    else
+    {
       // Nivel 4
-      if (!get_entidad(0)->vivo()
-           or get_entidad(0)->getBateria() == 0
-           or get_entidad(0)->getTiempo() > get_entidad(0)->getTiempoMaximo()) {
+      if (!get_entidad(0)->vivo() or get_entidad(0)->getBateria() == 0 or get_entidad(0)->getTiempo() > get_entidad(0)->getTiempoMaximo())
+      {
         jugando = false;
         resultados = true;
       }
-      else {
+      else
+      {
         // Nuevo destino
-        if (get_entidad(0)->allObjetivosAlcanzados()){
+        if (get_entidad(0)->allObjetivosAlcanzados())
+        {
           /*put_active_objetivos(3);
           get_entidad(0)->anularAlcanzados();
           get_entidad(0)->setObjetivos(get_active_objetivos());*/
@@ -207,116 +232,159 @@ void MonitorJuego::decPasos() {
           get_entidad(0)->resetFin();
         }
 
-        if (pasos > 0) {
+        if (pasos > 0)
+        {
           pasos--;
           pasosTotales++;
         }
       }
     }
   }
-  else {
-    if (pasos > 0) {
+  else
+  {
+    if (pasos > 0)
+    {
       pasos--;
       pasosTotales++;
     }
 
-    if (!get_entidad(0)->vivo() or get_entidad(0)->getBateria() == 0) {
+    if (!get_entidad(0)->vivo() or get_entidad(0)->getBateria() == 0)
+    {
       jugando = false;
       resultados = true;
     }
   }
 }
 
+bool MonitorJuego::CanISeeColaborador(int num_entidad)
+{
+  vector<unsigned char> agentes;
+  agentes = getMapa()->vision(num_entidad)[1];
+  int i = 1;
+  while (i < 16 and agentes[i] != 'c')
+  {
+    i++;
+  }
 
+  return (i != 16);
+}
 
-void MonitorJuego::inicializar(int pos_fila, int pos_col, int bruj, int seed) {
+void MonitorJuego::inicializar(int pos_filaJ, int pos_colJ, int brujJ, int pos_filaS, int pos_colS, int brujS, int seed)
+{
   clear();
-  //srand(seed);
-  //cout << "Estoy en MonitorJuego::inicializar\n";
+  // srand(seed);
+  // cout << "Estoy en MonitorJuego::inicializar\n";
   int tama = getMapa()->getNCols();
 
-  int naldeanos = tama / 10;
-  int nlobos = tama / 10;
+  int ncolaboradores = 1;
+  int naldeanos = 0;
+  int nlobos = 0;
+  //int naldeanos = tama / 10;
+  //int nlobos = tama / 10;
   unsigned char celdaRand;
 
-  //Se construye una lisa con 300 objetivos
-  if (nivel == 4) {
-    while (objetivos.size()<300){
+  // Se construye una lisa con 300 objetivos
+  if (nivel == 4)
+  {
+    while (objetivos.size() < 300)
+    {
       generate_a_objetive();
     }
   }
 
-  //Primero SIEMPRE se coloca al jugador. SIEMPRE.
-  if ((pos_fila == -1) or (pos_col == -1)) {
-    do {
-      pos_fila = aleatorio(getMapa()->getNFils()-1);
-      pos_col = aleatorio(getMapa()->getNCols()-1);
-      celdaRand = getMapa()->getCelda(pos_fila, pos_col);
-    }
-    while( (celdaRand == 'P') or (celdaRand == 'M') or (getMapa()->entidadEnCelda(pos_fila, pos_col) != '_') );
+  // Primero SIEMPRE se coloca al jugador. SIEMPRE.
+  if ((pos_filaJ == -1) or (pos_colJ == -1))
+  {
+    do
+    {
+      pos_filaJ = aleatorio(getMapa()->getNFils() - 1);
+      pos_colJ = aleatorio(getMapa()->getNCols() - 1);
+      celdaRand = getMapa()->getCelda(pos_filaJ, pos_colJ);
+    } while ((celdaRand == 'P') or (celdaRand == 'M') or (getMapa()->entidadEnCelda(pos_filaJ, pos_colJ) != '_'));
   }
-  else {
+  else
+  {
     // para hacer que la secuencia de recogida de numeros aleatorios sea independiente si da o no las coordenadas al principio
-    int kkx = aleatorio(getMapa()->getNFils()-1);
-    int kky = aleatorio(getMapa()->getNCols()-1);
+    int kkx = aleatorio(getMapa()->getNFils() - 1);
+    int kky = aleatorio(getMapa()->getNCols() - 1);
+  }
 
+  // El segundo SIEMPRE es el colaborador. Siempre. SIEMPRE.
+  if ((pos_filaS == -1) or (pos_colS == -1))
+  {
+    do
+    {
+      pos_filaS = aleatorio(getMapa()->getNFils() - 1);
+      pos_colS = aleatorio(getMapa()->getNCols() - 1);
+      celdaRand = getMapa()->getCelda(pos_filaS, pos_colS);
+    } while ((celdaRand == 'P') or (celdaRand == 'M') or (getMapa()->entidadEnCelda(pos_filaS, pos_colS) != '_'));
+  }
+  else
+  {
+    // para hacer que la secuencia de recogida de numeros aleatorios sea independiente si da o no las coordenadas al principio
+    int kkx = aleatorio(getMapa()->getNFils() - 1);
+    int kky = aleatorio(getMapa()->getNCols() - 1);
   }
 
   // Pongo los primeros objetivos objetivosActivos
-  if (nivel <3 ){
-    put_active_objetivos(1);
-  }
-  else if (nivel == 4){
-    put_active_objetivos(3);
-  }
-  else {
-    put_active_objetivos(0);
-  }
+  put_active_objetivos(1);
 
   // Para los primeros niveles hago el mapa visible
-  if ( (nivel==0) or (nivel == 1) or (nivel == 2) ) {
-    vector< vector< unsigned char> > mAux(getMapa()->getNFils(), vector< unsigned char>(getMapa()->getNCols(), '?'));
+  if ((nivel == 0) or (nivel == 1) or (nivel == 2) or (nivel == 3))
+  {
+    vector<vector<unsigned char>> mAux(getMapa()->getNFils(), vector<unsigned char>(getMapa()->getNCols(), '?'));
     for (int i = 0; i < getMapa()->getNFils(); i++)
       for (int j = 0; j < getMapa()->getNCols(); j++)
         mAux[i][j] = getMapa()->getCelda(i, j);
     // Esto coloca al jugador en el mapa
-    //cout << "bruj: " << bruj << endl;
+    // cout << "bruj: " << bruj << endl;
 
-      nueva_entidad(new Entidad(jugador, jugador_,static_cast<Orientacion>(bruj), pos_fila, pos_col, new Jugador3D(""), new ComportamientoJugador(mAux), 1, objetivosActivos, 3000));
+    nueva_entidad(new Entidad(jugador, jugador_, static_cast<Orientacion>(brujJ), pos_filaJ, pos_colJ, new Jugador3D(""), new ComportamientoJugador(mAux), 1, objetivosActivos, 3000));
+    nueva_entidad(new Entidad(npc, colaborador, static_cast<Orientacion>(brujS), pos_filaS, pos_colS, new Colaborador3D(""), new ComportamientoColaborador(), 1, objetivosActivos, 3000));
   }
-  else {
+  else
+  {
     // Esto coloca al jugador en el mapa
-    if (bruj ==-1) bruj = rand() % 4;
+    if (brujJ == -1)
+      brujJ = rand() % 8;
+    if (brujS == -1)
+      brujS = rand() % 8;
 
-    if (nivel == 3){
-      nueva_entidad(new Entidad(jugador, jugador_, static_cast<Orientacion>(bruj), pos_fila, pos_col, new Jugador3D(""), new ComportamientoJugador(getMapa()->getNFils()), 0, objetivosActivos, 3000));
-    }
-    else {
-      nueva_entidad(new Entidad(jugador, jugador_, static_cast<Orientacion>(bruj), pos_fila, pos_col, new Jugador3D(""), new ComportamientoJugador(getMapa()->getNFils()), objetivosActivos.size()/2, objetivosActivos, 3000));
-    }
-
+    nueva_entidad(new Entidad(jugador, jugador_, static_cast<Orientacion>(brujJ), pos_filaJ, pos_colJ, new Jugador3D(""), new ComportamientoJugador(getMapa()->getNFils()), 1, objetivosActivos, 3000));
+    nueva_entidad(new Entidad(npc, colaborador, static_cast<Orientacion>(brujS), pos_filaS, pos_colS, new Colaborador3D(""), new ComportamientoColaborador(), 1, objetivosActivos, 3000));
   }
+
+  ReAparicionesEntidad( 0, pos_filaJ, pos_colJ, static_cast<Orientacion>(brujJ));
+  ReAparicionesEntidad( 1, pos_filaS, pos_colS, static_cast<Orientacion>(brujS));
+  get_entidad(0)->SetColaborador(get_entidad(1));
+  get_entidad(0)->setLastAction(actIDLE);
+  get_entidad(1)->setLastAction(act_CLB_STOP);
+  get_entidad(0)->SetActionSent(act_CLB_STOP);
 
   // Para el último nivel genero los aldeanos y lobos
-  if (nivel == 4) {
-    for (int i=0; i<naldeanos; i++) {
-      do {
-        pos_fila = aleatorio(getMapa()->getNFils()-1);
-        pos_col = aleatorio(getMapa()->getNCols()-1);
-        celdaRand = getMapa()->getCelda(pos_fila, pos_col);
-      }
-      while( (celdaRand == 'P') or (celdaRand == 'M') or (getMapa()->entidadEnCelda(pos_fila, pos_col) != '_') );
-      nueva_entidad(new Entidad(npc, aldeano, static_cast<Orientacion>(aleatorio(7)), pos_fila, pos_col, new Aldeano3D(""), new ComportamientoAldeano(), 0, objetivosActivos, 3000));
+  int pos_filaO, pos_colO;
+  if (nivel == 4)
+  {
+    for (int i = 0; i < naldeanos; i++)
+    {
+      do
+      {
+        pos_filaO = aleatorio(getMapa()->getNFils() - 1);
+        pos_colO = aleatorio(getMapa()->getNCols() - 1);
+        celdaRand = getMapa()->getCelda(pos_filaO, pos_colO);
+      } while ((celdaRand == 'P') or (celdaRand == 'M') or (getMapa()->entidadEnCelda(pos_filaO, pos_colO) != '_'));
+      nueva_entidad(new Entidad(npc, aldeano, static_cast<Orientacion>(aleatorio(7)), pos_filaO, pos_colO, new Aldeano3D(""), new ComportamientoAldeano(), 1, objetivosActivos, 3000));
     }
 
-    for (int i=0; i<nlobos; i++) {
-      do {
-        pos_fila = aleatorio(getMapa()->getNFils()-1);
-        pos_col = aleatorio(getMapa()->getNCols()-1);
-        celdaRand = getMapa()->getCelda(pos_fila, pos_col);
-      }
-      while( (celdaRand == 'P') or (celdaRand == 'M') or (getMapa()->entidadEnCelda(pos_fila, pos_col) != '_') );
-      nueva_entidad(new Entidad(npc, lobo, static_cast<Orientacion>(aleatorio(7)), pos_fila, pos_col, new Perro3D, new ComportamientoPerro(), 0, objetivosActivos, 3000));
+    for (int i = 0; i < nlobos; i++)
+    {
+      do
+      {
+        pos_filaO = aleatorio(getMapa()->getNFils() - 1);
+        pos_colO = aleatorio(getMapa()->getNCols() - 1);
+        celdaRand = getMapa()->getCelda(pos_filaO, pos_colO);
+      } while ((celdaRand == 'P') or (celdaRand == 'M') or (getMapa()->entidadEnCelda(pos_filaO, pos_colO) != '_'));
+      nueva_entidad(new Entidad(npc, lobo, static_cast<Orientacion>(aleatorio(7)), pos_filaO, pos_colO, new Perro3D, new ComportamientoPerro(), 1, objetivosActivos, 3000));
     }
   }
 
@@ -324,27 +392,50 @@ void MonitorJuego::inicializar(int pos_fila, int pos_col, int bruj, int seed) {
   if ((nivel == 0) or (nivel == 1) or (nivel == 2) or (nivel == 3))
     get_entidad(0)->notify();
 
-  //srand(seed);
+  // srand(seed);
   /* quitar esto una vez verificado */
-  //PintaEstadoMonitor();
-
+  // PintaEstadoMonitor();
 }
 
+void MonitorJuego::ReAparicionesEntidad(int Entidad, int fila, int columna, Orientacion brujula)
+{
+  get_entidad(Entidad)->setPosicion(fila, columna);
+  get_entidad(Entidad)->setOrientacion(brujula);
+  get_entidad(Entidad)->setHitbox(true);
+  get_entidad(Entidad)->Cogio_Bikini(false);
+  get_entidad(Entidad)->Cogio_Zapatillas(false);
+  switch (getMapa()->getCelda(fila, columna))
+  {
+  case 'X': // Casilla Rosa (Recarga)
+    get_entidad(Entidad)->increaseBateria(10);
+    break;
 
+  case 'D': // Casilla Morada (Zapatillas)
+    get_entidad(Entidad)->Cogio_Zapatillas(true);
+    break;
+  case 'K': // Casilla Amarilla (Bikini)
+    get_entidad(Entidad)->Cogio_Bikini(true);
+    break;
+  }
+}
 
-void MonitorJuego::PintaEstadoMonitor(){
+void MonitorJuego::PintaEstadoMonitor()
+{
   cout << "*********************************************\n";
-  cout << "Pos Fil: " << get_entidad(0)->getFil() <<endl;
-  cout << "Pos Col: " << get_entidad(0)->getCol() <<endl;
-  cout << "Brujula: " << get_entidad(0)->getOrientacion() <<endl;
-  for (int i=0; i<get_entidad(0)->getNumObj(); i++){
-    cout << "Obj " << i <<" : F: " << get_entidad(0)->getObjFil(i) << "  C: " << get_entidad(0)->getObjCol(i) <<endl;
+  cout << "Pos Fil: " << get_entidad(0)->getFil() << endl;
+  cout << "Pos Col: " << get_entidad(0)->getCol() << endl;
+  cout << "Brujula: " << get_entidad(0)->getOrientacion() << endl;
+  for (int i = 0; i < get_entidad(0)->getNumObj(); i++)
+  {
+    cout << "Obj " << i << " : F: " << get_entidad(0)->getObjFil(i) << "  C: " << get_entidad(0)->getObjCol(i) << endl;
   }
   cout << "aldeanos: " << numero_entidades() << endl;
-  for (int i=1; i<numero_entidades(); i++){
-    cout << "  Pos Fil: " << get_entidad(i)->getFil() <<endl;
-    cout << "  Pos Col: " << get_entidad(i)->getCol() <<endl;
-    cout << "  Brujula: " << get_entidad(i)->getOrientacion() <<endl << endl;
+  for (int i = 1; i < numero_entidades(); i++)
+  {
+    cout << "  Pos Fil: " << get_entidad(i)->getFil() << endl;
+    cout << "  Pos Col: " << get_entidad(i)->getCol() << endl;
+    cout << "  Brujula: " << get_entidad(i)->getOrientacion() << endl
+         << endl;
   }
   cout << "*********************************************\n";
 }
@@ -361,11 +452,228 @@ double MonitorJuego::CoincidenciaConElMapa()
       {
         aciertos++;
       }
-      else if (get_entidad(0)->getMapaResultado()[i][j] != '?'){ //Puso un valor distinto de desconocido en mapaResultado y no acertó
+      else if (get_entidad(0)->getMapaResultado()[i][j] != '?')
+      { // Puso un valor distinto de desconocido en mapaResultado y no acertó
         aciertos--;
       }
       totalCasillas++;
     }
   }
   return (aciertos * 100.0 / totalCasillas);
+}
+
+
+string strAccion(Action accion)
+{
+  string out = "";
+
+  switch (accion)
+  {
+  case actWALK:
+    out = "actWALK";
+    break;
+  case actRUN:
+    out = "actRUN";
+    break;
+  case actTURN_L:
+    out = "actTURN_L";
+    break;
+  case actTURN_SR:
+    out = "actTURN_SR";
+    break;
+  case actWHEREIS:
+    out = "actWHEREIS";
+    break;
+  case act_CLB_WALK:
+    out = "act_CLB_WALK";
+    break;
+  case act_CLB_TURN_SR:
+    out = "act_CLB_TURN_SR";
+    break;
+  case act_CLB_STOP:
+    out = "act_CLB_STOP";
+    break;
+  case actIDLE:
+    out = "actIDLE";
+    break;
+  }
+
+  return out;
+}
+
+string paraDonde(const Orientacion &x)
+{
+  string aux;
+  switch (x)
+  {
+  case norte:
+    aux = "norte";
+    break;
+  case noreste:
+    aux = "noreste";
+    break;
+  case este:
+    aux = "este ";
+    break;
+  case sureste:
+    aux = "sureste ";
+    break;
+  case sur:
+    aux = "sur  ";
+    break;
+  case suroeste:
+    aux = "suroeste  ";
+    break;
+  case oeste:
+    aux = "oeste";
+    break;
+  case noroeste:
+    aux = "noroeste";
+    break;
+  }
+  return aux;
+}
+
+string MonitorJuego::toString()
+{
+  char aux[20];
+  string saux;
+
+  string str;
+
+  sprintf(aux, "%d", get_entidad(0)->getInstantesPendientes());
+  saux = aux;
+  str += "Tiempo restante: " + saux + "\n";
+
+  sprintf(aux, "%d", get_entidad(0)->getBateria());
+  saux = aux;
+  str += "Bateria: " + saux + "\n";
+
+  string paDonde = paraDonde(get_entidad(0)->getOrientacion());
+
+  str += "Posicion jugador: (F ";
+  sprintf(aux, "%d", get_entidad(0)->getFil());
+  saux = aux;
+  str += saux;
+  str += " , C ";
+  sprintf(aux, "%d", get_entidad(0)->getCol());
+  saux = aux;
+  str += saux;
+  str += " | ";
+  str += paDonde;
+  str += ")";
+  str += "\n";
+
+  string paDonde2 = paraDonde(get_entidad(1)->getOrientacion());
+
+  str += "Posicion colaborador: (F ";
+  sprintf(aux, "%d", get_entidad(1)->getFil());
+  saux = aux;
+  str += saux;
+  str += " , C ";
+  sprintf(aux, "%d", get_entidad(1)->getCol());
+  saux = aux;
+  str += saux;
+  str += " | ";
+  str += paDonde2;
+  str += ")";
+  str += "\n";
+
+  Action ac = get_entidad(0)->getLastAction();
+  str += "Ultima Accion: " + strAccion(ac) + "\n";
+
+  sprintf(aux, "%3.3f", get_entidad(0)->getTiempo() / CLOCKS_PER_SEC);
+  saux = aux;
+
+  str += "Tiempo Consumido: " + saux + "\n";
+
+  string saux2;
+  if (get_entidad(0)->Has_Zapatillas())
+  {
+    saux2 = "JUG ZAP ";
+  }
+  else
+  {
+    saux2 = "JUG --- ";
+  }
+
+  if (get_entidad(0)->Has_Bikini())
+  {
+    saux2 = saux2 + " BIK | ";
+  }
+  else
+  {
+    saux2 = saux2 + " --- | ";
+  }
+
+  if (get_entidad(1)->Has_Zapatillas())
+  {
+    saux2 = saux2 + "CLB ZAP ";
+  }
+  else
+  {
+    saux2 = saux2 + "CLB --- ";
+  }
+
+  if (get_entidad(1)->Has_Bikini())
+  {
+    saux2 = saux2 + " BIK \n";
+  }
+  else
+  {
+    saux2 = saux2 + " --- \n";
+  }
+  str += saux2;
+
+  sprintf(aux, "(%d) %d", get_entidad(0)->getMisiones(), get_entidad(0)->getPuntuacion());
+  str += "Puntuacion: ";
+  saux = aux;
+  str += saux;
+  str += "\n";
+
+  vector<vector<unsigned char>> visionAux = getMapa()->vision(0);
+
+  if (visionAux.size() > 0)
+  {
+    // str += "************ Vision **************\n";
+
+    for (unsigned int i = 0; i < visionAux[1].size(); i++)
+    {
+      str += visionAux[1][i];
+      str += " ";
+    }
+
+    str += "\n";
+
+    for (unsigned int i = 0; i < visionAux[0].size(); i++)
+    {
+      str += visionAux[0][i];
+      str += " ";
+    }
+
+    str += "\n";
+  }
+
+  return str;
+}
+
+
+void MonitorJuego::init_casillas_especiales(unsigned int f, unsigned int c, unsigned int fcolab, unsigned int ccolab){
+  unsigned char celda_inicial, celda_colab;
+  celda_inicial = getMapa()->getCelda(f, c);
+  celda_colab = getMapa()->getCelda(fcolab, ccolab);
+  if (celda_inicial == 'D'){
+    get_entidad(0)->Cogio_Zapatillas(true);
+  }
+  else if (celda_inicial == 'K'){
+    get_entidad(0)->Cogio_Bikini(true);
+  }
+
+  if (celda_colab == 'D'){
+    get_entidad(1)->Cogio_Zapatillas(true);
+  }
+  else if (celda_colab == 'K'){
+    get_entidad(1)->Cogio_Bikini(true);
+  }
+
 }

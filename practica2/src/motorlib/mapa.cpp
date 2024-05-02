@@ -45,22 +45,22 @@ void Mapa::colorCeldaOpuestoMM(unsigned char celda)
   switch (celda)
   {
   case 'P':
-    glColor3f(1, 1, 1);
+    glColor3f(1, 0, 0);
     break;
   case 'B':
-    glColor3f(0, 0, 0);
+    glColor3f(1, 0, 0);
     break;
   case 'A':
-    glColor3f(0.0, 0.0, 0.0);
+    glColor3f(1.0, 0.0, 0.0);
     break;
   case 'S':
-    glColor3f(0, 0, 0);
+    glColor3f(1, 0, 0);
     break;
   case 'M':
     glColor3f(1, 1, 1);
     break;
   case 'T':
-    glColor3f(1, 1, 1);
+    glColor3f(1, 0, 0);
     break;
   case 'K':
     glColor3f(0, 0, 0);
@@ -70,6 +70,47 @@ void Mapa::colorCeldaOpuestoMM(unsigned char celda)
     break;
   case 'D':
     glColor3f(1, 1, 1);
+    break;
+  case 'X':
+    glColor3f(0, 0, 0);
+    break;
+  default:
+    glColor3f(0.0, 0.0, 0.0);
+    break;
+  }
+}
+
+
+void Mapa::colorCeldaOpuestoMM2(unsigned char celda)
+{
+  switch (celda)
+  {
+  case 'P':
+    glColor3f(255.0 / 255.0, 159.0 / 255.0, 5.0 / 255.0);
+    break;
+  case 'B':
+    glColor3f(255.0 / 255.0, 159.0 / 255.0, 5.0 / 255.0);
+    break;
+  case 'A':
+    glColor3f(255.0 / 255.0, 159.0 / 255.0, 5.0 / 255.0);
+    break;
+  case 'S':
+    glColor3f(255.0 / 255.0, 159.0 / 255.0, 5.0 / 255.0);
+    break;
+  case 'M':
+    glColor3f(255.0 / 255.0, 159.0 / 255.0, 5.0 / 255.0);
+    break;
+  case 'T':
+    glColor3f(255.0 / 255.0, 159.0 / 255.0, 5.0 / 255.0);
+    break;
+  case 'K':
+    glColor3f(0, 0, 0);
+    break;
+  case 'Z':
+    glColor3f(255.0 / 255.0, 159.0 / 255.0, 5.0 / 255.0);
+    break;
+  case 'D':
+    glColor3f(255.0 / 255.0, 159.0 / 255.0, 5.0 / 255.0);
     break;
   case 'X':
     glColor3f(0, 0, 0);
@@ -155,12 +196,12 @@ void Mapa::complementosCelda(unsigned char celda)
     glutSolidCube(1.0);
     break;
   case 'B':
-    glScalef(5.0, 15.0, 5.0);
+    glScalef(5.0, 10.0, 5.0);
     arbol->draw(1);
     break;
   case 'M':
     glColor3f(0.6, 0.0, 0.0);
-    glTranslatef(0.0, 7.5, 0.0);
+    glTranslatef(0.0, 0.2, 0.0);
     glScalef(5.0, 15.0, 5.0);
     glutSolidCube(1.0);
     break;
@@ -177,6 +218,13 @@ void Mapa::formaEntidad(unsigned char tipoParam)
     glRotatef(90.0, 1, 0, 0);
     glScalef(1.0, 1.0, 0.75);
     jug->setColor(_vertex3<float>(1.0, 0.0, 0.0));
+    jug->draw(1);
+    break;
+
+  case 'c':
+    glRotatef(90.0, 1, 0, 0);
+    glScalef(1.0, 1.0, 0.75);
+    jug->setColor(_vertex3<float>(255.0 / 255.0, 159.0 / 255.0, 5.0 / 255.0));
     jug->draw(1);
     break;
 
@@ -249,13 +297,45 @@ void Mapa::drawMM1(vector<unsigned int> objetivosActivos /*int f, int c*/)
         glEnd();*/
 
         // glColor3f(0.0,1.0,1.0);
-        colorCeldaOpuestoMM(mapaCompleto[j][i]);
-        glBegin(GL_QUADS);
-        glVertex3f(0.0, -0.3, 0.0);
-        glVertex3f(-0.3, 0.0, 0.0);
-        glVertex3f(0.0, 0.3, 0.0);
-        glVertex3f(0.3, 0.0, 0.0);
-        glEnd();
+        if (mapaConPlan[j][i] == 1  or mapaConPlan[j][i] == 2){
+          if (mapaConPlan[j][i] == 1) colorCeldaOpuestoMM(mapaCompleto[j][i]);
+          else colorCeldaOpuestoMM2(mapaCompleto[j][i]);
+
+          glBegin(GL_QUADS);
+          glVertex3f(0.0, -0.3, 0.0);
+          glVertex3f(-0.3, 0.0, 0.0);
+          glVertex3f(0.0, 0.3, 0.0);
+          glVertex3f(0.3, 0.0, 0.0);
+          glEnd();
+        } 
+        if (mapaConPlan[j][i] == 3){
+          colorCeldaOpuestoMM(mapaCompleto[j][i]);
+          glBegin(GL_TRIANGLES);
+          glVertex3f(-0.10f, 0.0f, 0.0);
+          glVertex3f(0.10f, 0.0f, 0.0);
+          glVertex3f(0.0f, 0.20f, 0.0);
+
+          glVertex3f(-0.10f,0.0f, 0.0);
+          glVertex3f(-0.30f,-0.10f, 0.0);
+          glVertex3f(-0.10f,-0.20f, 0.0);
+
+          glVertex3f(-0.10f,-0.20f, 0.0);
+          glVertex3f(0.0f, -0.40f, 0.0);
+          glVertex3f(0.10f, -0.20f, 0.0);
+
+          glVertex3f(0.10f, -0.20f, 0.0);
+          glVertex3f(0.30f, -0.10f, 0.0);
+          glVertex3f(0.10f, 0.0f, 0.0);
+
+          glVertex3f(-0.10f, 0.0f, 0.0);
+          glVertex3f(-0.10f,-0.20f, 0.0);
+          glVertex3f(0.10f, 0.0f, 0.0);
+
+          glVertex3f(-0.10f,-0.20f, 0.0);
+          glVertex3f(0.10f, -0.20f, 0.0);
+          glVertex3f(0.10f, 0.0f, 0.0);
+          glEnd();
+        }
       }
 
       glPopMatrix();
@@ -323,6 +403,25 @@ void Mapa::drawMM2(vector<unsigned int> objetivosActivos /*int f, int c*/)
 
       colorCeldaMM(mapaSuperficie[j][i]);
 
+      switch (mapaSuperficie[j][i]){
+        case 'T':
+          glBegin(GL_QUADS);
+          glVertex3f(-0.5, -0.5, 1.0);
+          glVertex3f(-0.5, 0.5, 1.0);
+          glVertex3f(0.5, 0.5, 1.0);
+          glVertex3f(0.5, -0.5, 1.0);
+          glEnd();        
+          break;
+        default:
+          glBegin(GL_QUADS);
+          glVertex3f(-0.5, -0.5, 0.0);
+          glVertex3f(-0.5, 0.5, 0.0);
+          glVertex3f(0.5, 0.5, 0.0);
+          glVertex3f(0.5, -0.5, 0.0);
+          glEnd();        
+          break;
+      }
+
       glBegin(GL_QUADS);
       glVertex3f(-0.5, -0.5, 0.0);
       glVertex3f(-0.5, 0.5, 0.0);
@@ -341,13 +440,45 @@ void Mapa::drawMM2(vector<unsigned int> objetivosActivos /*int f, int c*/)
         glEnd();*/
 
         // glColor3f(0.0,1.0,1.0);
-        colorCeldaOpuestoMM(mapaSuperficie[j][i]);
-        glBegin(GL_QUADS);
-        glVertex3f(0.0, -0.3, 0.0);
-        glVertex3f(-0.3, 0.0, 0.0);
-        glVertex3f(0.0, 0.3, 0.0);
-        glVertex3f(0.3, 0.0, 0.0);
-        glEnd();
+        if (mapaConPlan[j][i] == 1  or mapaConPlan[j][i] == 2){
+          if (mapaConPlan[j][i] == 1) colorCeldaOpuestoMM(mapaCompleto[j][i]);
+          else colorCeldaOpuestoMM2(mapaCompleto[j][i]);
+
+          glBegin(GL_QUADS);
+          glVertex3f(0.0, -0.3, 0.0);
+          glVertex3f(-0.3, 0.0, 0.0);
+          glVertex3f(0.0, 0.3, 0.0);
+          glVertex3f(0.3, 0.0, 0.0);
+          glEnd();
+        } 
+        if (mapaConPlan[j][i] == 3){
+          colorCeldaOpuestoMM(mapaCompleto[j][i]);
+          glBegin(GL_TRIANGLES);
+          glVertex3f(-0.10f, 0.0f, 0.0);
+          glVertex3f(0.10f, 0.0f, 0.0);
+          glVertex3f(0.0f, 0.20f, 0.0);
+
+          glVertex3f(-0.10f,0.0f, 0.0);
+          glVertex3f(-0.30f,-0.10f, 0.0);
+          glVertex3f(-0.10f,-0.20f, 0.0);
+
+          glVertex3f(-0.10f,-0.20f, 0.0);
+          glVertex3f(0.0f, -0.40f, 0.0);
+          glVertex3f(0.10f, -0.20f, 0.0);
+
+          glVertex3f(0.10f, -0.20f, 0.0);
+          glVertex3f(0.30f, -0.10f, 0.0);
+          glVertex3f(0.10f, 0.0f, 0.0);
+
+          glVertex3f(-0.10f, 0.0f, 0.0);
+          glVertex3f(-0.10f,-0.20f, 0.0);
+          glVertex3f(0.10f, 0.0f, 0.0);
+
+          glVertex3f(-0.10f,-0.20f, 0.0);
+          glVertex3f(0.10f, -0.20f, 0.0);
+          glVertex3f(0.10f, 0.0f, 0.0);
+          glEnd();
+        }
       }
 
       glPopMatrix();
@@ -366,6 +497,7 @@ void Mapa::drawMM2(vector<unsigned int> objetivosActivos /*int f, int c*/)
 
   for (unsigned int i = 0; i < entidades->size(); i++)
   {
+    //cout << "Entidad " << i << " tipo " << (*entidades)[i]->getSubTipoChar() << " (" << (*entidades)[i]->getFil() << ", " << (*entidades)[i]->getCol() << endl;
     if ((*entidades)[i]->getHitbox())
     {
       glPushMatrix();
@@ -427,15 +559,9 @@ void Mapa::drawFirstPerson()
 
   // Camara
   gluLookAt(
-      ((GLfloat)colMed - (GLfloat)x) * (5.0),
-      3.5 + Y2,
-      ((GLfloat)filaMed - (GLfloat)z) * 5.0,
-      (((GLfloat)colMed - (GLfloat)x) * (5.0)) + sin((angulo * 2.0 * M_PI) / 360.0),
-      3.4 - Y1,
-      (((GLfloat)filaMed - (GLfloat)z) * 5.0) - cos((angulo * 2.0 * M_PI) / 360.0),
-      0.0,
-      3.3,
-      0.0);
+      ((GLfloat)colMed - (GLfloat)x) * (5.0),  3.5 + Y2, ((GLfloat)filaMed - (GLfloat)z) * 5.0,
+      (((GLfloat)colMed - (GLfloat)x) * (5.0)) + sin((angulo * 2.0 * M_PI) / 360.0), 3.4 - Y1, (((GLfloat)filaMed - (GLfloat)z) * 5.0) - cos((angulo * 2.0 * M_PI) / 360.0),
+      0.0, 3.3, 0.0);
 
   int fs = x - 15;
   if (fs < 0)
@@ -492,6 +618,21 @@ void Mapa::drawFirstPerson()
           glutSolidSphere(0.43, 50, 50);
           // glutSolidCube(0.2);
         }
+        else if (mapaConPlan[j][i] == 2)
+        {
+          glColor3f(0, 0.5, 0.5);
+          glScalef(1.0, 1.2, 1.0);
+          glutSolidSphere(0.43, 50, 50);
+          // glutSolidCube(0.2);
+        }
+        else if (mapaConPlan[j][i] == 3)
+        {
+          glColor3f(1.0, 0.0, 0.0);
+          glScalef(1.0, 1.2, 1.0);
+          glutSolidSphere(0.43, 50, 50);
+          //glutSolidOctahedron();
+          //glutSolidCube(0.4);
+        }     
       }
 
       glPopMatrix();
@@ -645,6 +786,97 @@ pair<int,int> Mapa::NCasillasDelante(unsigned int entidad, int casillas)
   r.second = c;
   return r;
 }
+
+// Devuelve 0 si es posible correr, 
+//          1 choca contra un muro.
+//          2 cae en un precipicio.
+//          3 choca contra un colaborador.
+//          4 choca contra un aldeano.
+//          5 choca contra un lobo.
+
+int Mapa::EsPosibleCorrer(unsigned int entidad, int avance_size)
+{
+  int out = -4;
+
+  unsigned int *f = new unsigned int[avance_size + 1];
+  unsigned int *c = new unsigned int[avance_size + 1];
+
+  f[0] = (*entidades)[entidad]->getFil();
+  c[0] = (*entidades)[entidad]->getCol();
+
+  int accesible = 0;
+
+  for (int i = 1; i < avance_size + 1 and accesible == 0; i++)
+  {
+    switch ((*entidades)[entidad]->getOrientacion())
+    {
+    case norte:
+      f[i] = f[i - 1] - 1;
+      c[i] = c[i - 1];
+      break;
+
+    case noreste:
+      f[i] = f[i - 1] - 1;
+      c[i] = c[i - 1] + 1;
+      break;
+
+    case este:
+      f[i] = f[i - 1];
+      c[i] = c[i - 1] + 1;
+      break;
+
+    case sureste:
+      f[i] = f[i - 1] + 1;
+      c[i] = c[i - 1] + 1;
+      break;
+
+    case sur:
+      f[i] = f[i - 1] + 1;
+      c[i] = c[i - 1];
+      break;
+
+    case suroeste:
+      f[i] = f[i - 1] + 1;
+      c[i] = c[i - 1] - 1;
+      break;
+
+    case oeste:
+      f[i] = f[i - 1];
+      c[i] = c[i - 1] - 1;
+      break;
+
+    case noroeste:
+      f[i] = f[i - 1] - 1;
+      c[i] = c[i - 1] - 1;
+      break;
+    }
+
+    if (mapaCompleto[f[i]][c[i]] == 'M')
+      accesible = 1;
+    else if (mapaCompleto[f[i]][c[i]] == 'P')
+      accesible = 2;
+    else
+    {
+      unsigned int j = 0;
+      while ((j < entidades->size()) and (accesible == 0))
+      {
+        if ((*entidades)[j]->getFil() == f[i] and (*entidades)[j]->getCol() == c[i] and (*entidades)[j]->getHitbox() and entidad != j)
+        {
+          if ((*entidades)[j]->getSubTipo() == colaborador)
+            accesible = 3;
+          else if ((*entidades)[j]->getSubTipo() == lobo)
+            accesible = 5;
+          else
+            accesible = 4;
+        }
+        j++;
+      }
+    }
+  }
+
+  return accesible;
+}
+
 
 
 
@@ -834,6 +1066,9 @@ void Mapa::girarCamaraIzquierda(int grados)
       case aldeano:
         out = 'a';
         break;
+     case colaborador:
+        out = 'c';
+        break;        
       case lobo:
         out = 'l';
         break;

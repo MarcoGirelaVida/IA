@@ -1,4 +1,4 @@
-# Práctica 2 de *Inteligencia Artificial*, curso 2021/2022
+# Práctica 2 de *Inteligencia Artificial*, curso 2023/2024
 
 Si has realizado la práctica1, y tienes la clave SSH configurada, puedes ir directamente al [paso 2](#2.-crear-tu-copia-personal-del-repositorio-de-la-asignatura).
 
@@ -65,7 +65,7 @@ El propio GitHub pone a tu disposición un [breve curso](https://classroom.githu
 
 
 ## Realización de la práctica
-El guión (disponible en [PRADO](https://pradogrado2122.ugr.es/)) contiene toda la información sobre en qué consiste la práctica2. Leelo con atención.
+El guión (disponible en [PRADO](https://pradogrado2324.ugr.es/)) contiene toda la información sobre en qué consiste la práctica2. Leelo con atención.
 
 Junto a ellos, también tienes a tu disposición una pequeña presentación de resumen, y un tutorial. Debes revisarlos pues continen los primeros pasos a realizar.
 

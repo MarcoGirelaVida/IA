@@ -1,10 +1,4 @@
-cmake_minimum_required(VERSION 3.2)
-
-# mgo - haz que se muestren los comandos que se ejecutan
-set(CMAKE_VERBOSE_MAKEFILE on)
-
-## ------------------------ mgo ------------------
-include(CMakePrintHelpers)
+cmake_minimum_required(VERSION 2.8)
 
 project(Motor_Grafico_Belkan)
 
@@ -22,9 +16,6 @@ add_definitions(${GLUT_DEFINITIONS})
 if(NOT GLUT_FOUND)
     message(ERROR " GLUT not found!")
 endif(NOT GLUT_FOUND)
-cmake_print_variables(GLUT_INCLUDE_DIRS)
-cmake_print_variables(GLUT_LIBRARY_DIRS)
-cmake_print_variables(GLUT_DEFINITIONS)
 
 #########################################################
 # FIND OPENGL
@@ -82,8 +73,6 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 add_library(obj3DLib ${SOURCES_LIB3D})
 target_link_libraries(obj3DLib ${OPENGL_LIBRARIES} ${GLUT_LIBRARY} ${JPEG_LIBRARIES} "-lpthread")
 
-cmake_print_variables(GLUT_LIBRARY)
-
 add_library(GLUILib ${SOURCES_GLUI})
 target_link_libraries(GLUILib ${OPENGL_LIBRARIES} ${GLUT_LIBRARY})
 
@@ -94,11 +83,7 @@ add_library(comportamientosLib ${SOURCES_COMPORTAMIENTOS})
 target_link_libraries(comportamientosLib ${OPENMP_LIBRARIES} "-lpthread")
 
 add_library(motorLib ${SOURCES_LIBMOTOR})
-# -------------- añadido openGL::GL GLUT::GLUT ----- mgo ------
-#target_link_libraries(motorLib obj3DLib GLUILib comportamientosLib ${OPENGL_LIBRARIES} ${GLUT_LIBRARY} ${OPENMP_LIBRARIES} "-lpthread")
 target_link_libraries(motorLib obj3DLib GLUILib comportamientosLib OpenGL::GL GLUT::GLUT ${OPENGL_LIBRARIES} ${GLUT_LIBRARY} ${OPENMP_LIBRARIES} "-lpthread")
-
-cmake_print_variables(GLUT_LIBRARY)
 
 add_executable(practica2 "bin_src/juego.cc" ${SOURCES})
 target_link_libraries(practica2 obj3DLib motorLib modelosBelkanLib ${OPENMP_LIBRARIES} "-lpthread")

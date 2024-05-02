@@ -113,12 +113,19 @@ public:
   void actualizarAlcanzados();
   void anularAlcanzados();
 
-  void inicializar(int fila = -1, int columna = -1, int orienta = -1, int seed = 1);
+  void inicializar(int pos_filaJ = -1, int pos_colJ = -1, int brujJ = -1, int pos_filaS = -1, int pos_colS = -1, int brujS = -1, int seed = 1);
+  void ReAparicionesEntidad(int Entidad, int fila, int columna, Orientacion brujula);
+
+
   int get_semilla() const { return semilla; }
   void set_semilla(int seed) { semilla = seed; }
 
+  bool CanISeeColaborador(int num_entidad);
+
   void PintaEstadoMonitor();
   double CoincidenciaConElMapa();
+  string toString();
+  void init_casillas_especiales(unsigned int f, unsigned int c, unsigned int fcolab, unsigned int ccolab);
 
 };
 #endif

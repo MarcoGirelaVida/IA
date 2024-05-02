@@ -21,6 +21,8 @@ private:
 	// Atributos necesarios y tal y cual...
 	void colorCeldaMM(unsigned char celda);
 	void colorCeldaOpuestoMM(unsigned char celda);
+	void colorCeldaOpuestoMM2(unsigned char celda);
+
 	void complementosCelda(unsigned char celda);
 
 	void formaEntidad(unsigned char tipoParam);
@@ -31,7 +33,7 @@ private:
 	float x = 5.0;
 	float z = 5.0;
 
-	float Y1 = 0, Y2 = 0, Y3 = 3.25;
+	float Y1 = 0, Y2 = 0.0, Y3 = 3.25;
 
 	unsigned int nCols;
 	unsigned int nFils;
@@ -63,6 +65,9 @@ public:
 	int QuienEnCasilla(int f, int c);
 	int casillaOcupada(unsigned int entidad);
 	pair<int,int> NCasillasDelante(unsigned int entidad, int casillas);
+
+	int EsPosibleCorrer(unsigned int entidad, int avance_size);
+
 	int casillaOcupadaThrow(unsigned int entidad, int &fil, int &col);
 
 	void girarCamaraIzquierda(int grados);

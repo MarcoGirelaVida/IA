@@ -17,6 +17,7 @@ enum Tipo
 enum SubTipo
 {
   jugador_,
+  colaborador,
   aldeano,
   lobo,
   __NONE__
@@ -44,7 +45,13 @@ private:
 
   // reset
   bool reset = false;
+
+  // notificar coordenadas del agente
   bool mensaje = false;
+
+  // notificar coordenadas del colaborador
+  bool mensaje2 = false;
+
 
   // vida
   int vida = 3000;
@@ -56,19 +63,29 @@ private:
   bool hitbox = true;
   int desactivado = 0;
 
-  int last_action = 3;
+  Action last_action = actIDLE;
   int misiones = 0;
+  int puntuacion = 0;
   bool done = false;
   double tiempo = 0;
   double tiempoMaximo = 300 * CLOCKS_PER_SEC;
   int tiempo_sig_accion = 0;
   int bateria_sig_accion = 0;
+  int bateria_sig_accion_clb = 0;
   int nivel = 1;
 
   bool tiene_zapatillas = false;
   bool tiene_bikini = false;
 
+  Entidad* EntidadColaborador;
+
+
   vector<vector<unsigned char>> visionAux;
+
+  Action ActionSent;
+
+  // Indica si llego a la casilla objetivo
+  bool llegoObjetivo;
 
 public:
   Entidad(Tipo paramTipo, SubTipo paramSubTipo, Orientacion paramOrient, unsigned int paramF, unsigned int paramC, Objeto3D *mod, Comportamiento *comp, int numberdest, vector<unsigned int> CasillasObjetivo, int v)
@@ -86,6 +103,8 @@ public:
       alcanzados.push_back(false);
     vida = v;
     completoLosObjetivos = false;
+    ActionSent = act_CLB_STOP;
+    llegoObjetivo = false;
   }
 
   ~Entidad()
@@ -101,7 +120,11 @@ public:
       modelo->draw(modo);
     }
   }
-  Action think(int acc, vector<vector<unsigned char>> vision, int level);
+
+//  Action think(int acc, vector<vector<unsigned char>> vision, int level);
+
+  Action think(int acc, vector <vector< unsigned char> > vision, int level);
+
 
   // Programar funciones para la interacción con el entorno
   void setPosicion(unsigned int paramF, unsigned int paramC)
@@ -139,6 +162,7 @@ public:
   bool interact(Action accion, int valor);
 
   void resetEntidad();
+  void resetSignal(){reset = true;}
   void seAostio()
   {
     colision = true;
@@ -149,11 +173,12 @@ public:
   void setNotifyOff() { mensaje = false; }
 
 
+
   void setCompletoLosObjetivos() { completoLosObjetivos = true; }
   bool SeHanConseguidoLosObjetivos() { return completoLosObjetivos; }
 
-  void getLastAction(int accion) { last_action = accion; }
-  int putLastAction() { return last_action; }
+  void setLastAction(Action accion) {last_action = accion; }
+  Action getLastAction() {return last_action; }
 
   vector<vector<unsigned char>> getMapaResultado() { return comportamiento->getMapaResultado(); }
   vector<vector<unsigned char>> getMapaEntidades() { return comportamiento->getMapaEntidades(); }
@@ -164,6 +189,7 @@ public:
   string toString();
 
   void setVision(vector<vector<unsigned char>> vision) { visionAux = vision; }
+  vector<vector<unsigned char>> getVision(){return visionAux;}
 
   void perderPV(int valor) { vida -= valor; }
   void ganarPV(int valor) { vida += valor; }
@@ -180,7 +206,13 @@ public:
   double getTiempoMaximo() { return tiempoMaximo; }
   void addTiempo(double valor) { tiempo += valor; }
 
+  void setMisiones(int value) {misiones = value;}
   int getMisiones() { return misiones; }
+  void incrMisiones() {misiones++;}
+  
+  void setPuntuacion(int value) {puntuacion = value;}
+  int getPuntuacion() { return puntuacion;}
+  void incrPuntuacion(int value) {puntuacion += value;}
 
   bool isActived() { return desactivado != -1; }
   void Active() { desactivado = 0; }
@@ -205,7 +237,9 @@ public:
   int getBateria() const { return bateria; }
   void setBateria(int valor) { bateria = valor; }
   void fixBateria_default() { bateria_sig_accion = 0; }
-  int fixBateria_sig_accion(unsigned char celda, Action accion);
+  int fixBateria_sig_accion_jugador(unsigned char celdaJugador, Action accion);
+  int fixBateria_sig_accion_colaborador(unsigned char celdaColaborador, Action accion);
+
   void decBateria_sig_accion();
   int getBsig_accion() { return bateria_sig_accion; }
   void increaseBateria(int valor)
@@ -219,8 +253,16 @@ public:
   bool Has_Bikini() { return tiene_bikini; }
   void Cogio_Zapatillas(bool valor) { tiene_zapatillas = valor; }
   void Cogio_Bikini(bool valor) { tiene_bikini = valor; }
+  void SetActionSent(Action ac){ActionSent = ac;}
+  Action GetActionSent(){return ActionSent;}
 
   void set_Nivel(int level) { nivel = level; }
   int get_Nivel() { return nivel; }
+
+  void SetColaborador (Entidad *x) {EntidadColaborador = x;}
+
+  void SetLlegoOff(){llegoObjetivo = false;}
+  void SetLlegoOn(){llegoObjetivo = true;}
+  bool GetLlego(){return llegoObjetivo;}
 };
 #endif

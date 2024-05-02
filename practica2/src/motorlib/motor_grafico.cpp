@@ -13,14 +13,13 @@ const int IU_alto_ventana = 768;
 GLuint ventanaPrincipal, vistaPrincipal, vistaMiniMapa, vistaIU;
 GLUI *panelSelecMapa, *panelSelecMapaConfig;
 GLUI_Listbox *listbox;
-GLUI_RadioGroup *group, *group1;
+GLUI_RadioGroup *group;
 GLUI_Button *botonElegirMapa, *botonConfigurar, *botonPaso, *botonEjecucion, *botonEjecutar, *botonSalir;
-GLUI_EditText /* editPosColumna, * editPosFila,*/ *editTextPasos, *editTextRetardo;
+GLUI_EditText *editPosColumna, *editPosFila, *editTextPasos, *editTextRetardo;
 GLUI_Checkbox *drawMM, *drawMMVista;
 GLUI_StaticText *lineaVacia, *info0, *info1, *info2, *info3, *info4, *info5, *info6, *info7, *info8, *info9;
-GLUI_Spinner *setup1, *setup2, *setup3, *setup4, *setup5, *setup6, *setup7, *setup8, *setup9, *setup10;
-GLUI_Spinner *editPosColumna, *editPosFila;
-GLUI_RadioButton *obj1, *obj2, *obj3;
+GLUI_Spinner *setup1, *setup20, *setup21, *setup30, *setup31, *setup4, *setup5, *setup60, *setup61;
+// GLUI_Spinner *editPosColumna, *editPosFila;
 
 int nPasos = 10, tRetardo = 1, MMmode = 0, MMmode2 = 0, PosColumna = 1, PosFila = 1, tMap = 100, colisiones = 0;
 int objtiveSelected = 0;
@@ -209,7 +208,7 @@ void display_vistIU()
 
   if (monitor.jugar() and monitor.numero_entidades() > 0)
   {
-    str = monitor.get_entidad(0)->toString();
+    str = monitor.toString();
 
     Descomponer(str, strs);
 
@@ -267,6 +266,15 @@ void update(int valor)
   glutPostRedisplay();
   // glutKeyboardFunc(keyboard);
 
+  if (!monitor.there_are_active_objetivo())
+  {
+    monitor.put_active_objetivos(1);
+  }
+  monitor.get_n_active_objetivo(0, PosFila, PosColumna);
+
+  editPosFila->set_int_val(PosFila);
+  editPosColumna->set_int_val(PosColumna);
+
   glutTimerFunc(1, irAlJuego, 0);
 }
 
@@ -279,8 +287,8 @@ void irAlJuego(int valor)
     botonEjecucion->disable();
     botonEjecutar->disable();
     botonSalir->disable();
-    editPosColumna->disable();
-    editPosFila->disable();
+    // editPosColumna->disable();
+    // editPosFila->disable();
     editTextPasos->disable();
     editTextRetardo->disable();
     botonSalir->enable();
@@ -307,13 +315,13 @@ void botonAceptarNuevoMapaCB(int valor)
   botonEjecucion->enable();
   botonEjecutar->enable();
   botonSalir->enable();
-  editPosColumna->enable();
-  editPosFila->enable();
+  // editPosColumna->enable();
+  // editPosFila->enable();
   editTextPasos->enable();
   editTextRetardo->enable();
-  obj1->enable();
 
   int posF, posC, orienta;
+  int SposF, SposC, Sorienta;
 
   ultimomapaPos = listbox->get_int_val();
 
@@ -324,8 +332,8 @@ void botonAceptarNuevoMapaCB(int valor)
     const char *file = listbox->curr_text.c_str();
     monitor.setMapa(strcat(path, file));
 
-    // posicion del agente
-    if (monitor.numero_entidades() > 0)
+    // posicion del agente y del colaborador
+    if (monitor.numero_entidades() > 1)
     {
       posC = monitor.get_entidad(0)->getCol();
       posF = monitor.get_entidad(0)->getFil();
@@ -334,57 +342,47 @@ void botonAceptarNuevoMapaCB(int valor)
       {
         monitor.generate_a_valid_cell(posF, posC, orienta);
       }
+
+      SposC = monitor.get_entidad(1)->getCol();
+      SposF = monitor.get_entidad(1)->getFil();
+      Sorienta = monitor.get_entidad(1)->getOrientacion();
+      if (!monitor.is_a_valid_cell_like_goal(SposF, SposC))
+      {
+        monitor.generate_a_valid_cell(SposF, SposC, Sorienta);
+      }
+    }
+    else if (monitor.numero_entidades() > 0)
+    {
+      posC = monitor.get_entidad(0)->getCol();
+      posF = monitor.get_entidad(0)->getFil();
+      orienta = monitor.get_entidad(0)->getOrientacion();
+      if (!monitor.is_a_valid_cell_like_goal(posF, posC))
+      {
+        monitor.generate_a_valid_cell(posF, posC, orienta);
+      }
+      monitor.generate_a_valid_cell(SposF, SposC, Sorienta);
     }
     else
     {
       monitor.generate_a_valid_cell(posF, posC, orienta);
+      monitor.generate_a_valid_cell(SposF, SposC, Sorienta);
     }
 
     ultimonivel = group->get_int_val();
 
-    // los objetivos en funcion del niveles
-
-    if (ultimonivel == 4)
-    {
-      obj2->enable();
-      obj3->enable();
-      int n = monitor.get_number_active_objetivos();
-      for (int i = n - 1; i >= 0; i--)
-      {
-        int f, c;
-        monitor.get_n_active_objetivo(i, f, c);
-        if (monitor.is_a_valid_cell_like_goal(f, c))
-          monitor.put_a_new_objetivo_front(f, c);
-        else
-          monitor.generate_a_objetive();
-      }
-    }
-    else if (ultimonivel == 3){
-      obj1->disable();
-      obj2->disable();
-      obj3->disable();
-      editPosFila->disable();
-      editPosColumna->disable();
-    }
+    int f, c;
+    monitor.get_n_active_objetivo(0, f, c);
+    if (monitor.is_a_valid_cell_like_goal(f, c))
+      monitor.put_a_new_objetivo_front(f, c);
     else
-    {
-      obj2->disable();
-      obj3->disable();
-      int f, c;
-      monitor.get_n_active_objetivo(0, f, c);
-      if (monitor.is_a_valid_cell_like_goal(f, c))
-        monitor.put_a_new_objetivo_front(f, c);
-      else
-        monitor.generate_a_objetive();
-      group1->set_int_val(0);
-    }
+      monitor.generate_a_objetive();
 
     monitor.startGame(ultimonivel);
     if (monitor.inicializarJuego())
     {
-      monitor.inicializar(posF, posC, orienta);
+      monitor.inicializar(posF, posC, orienta, SposF, SposC, Sorienta);
       tMap = monitor.juegoInicializado();
-      if (ultimonivel >= 3)
+      if (ultimonivel == 4)
       {
         MMmode = 0;
         drawMM->set_int_val(0);
@@ -431,47 +429,26 @@ void botonConfigurarSimOK(int valor)
   botonSalir->enable();
   editTextPasos->enable();
   editTextRetardo->enable();
-  obj1->disable();
-  editPosColumna->disable();
-  editPosColumna->disable();
+  // editPosColumna->disable();
+  // editPosColumna->disable();
 
   srand(setup1->get_int_val());
   monitor.inicializar();
 
   int f, c;
-  if (ultimonivel == 4)
-  {
-    editPosColumna->enable();
-    editPosFila->enable();
-    obj1->enable();
-    monitor.set_n_active_objetivo(0, setup5->get_int_val(), setup4->get_int_val());
-    monitor.set_n_active_objetivo(1, setup7->get_int_val(), setup8->get_int_val());
-    monitor.set_n_active_objetivo(2, setup9->get_int_val(), setup10->get_int_val());
-    obj2->enable();
-    obj3->enable();
-    monitor.get_n_active_objetivo(objtiveSelected, f, c);
-    editPosFila->set_int_val(f);
-    editPosColumna->set_int_val(c);
-  }
-  else if (ultimonivel == 3){
-    obj1->disable();
-    editPosColumna->disable();
-    editPosColumna->disable();
-  }
-  else
-  {
-    editPosColumna->enable();
-    editPosFila->enable();
-    obj1->enable();
-    obj2->disable();
-    obj3->disable();
-    monitor.set_n_active_objetivo(0, setup5->get_int_val(), setup4->get_int_val());
-    monitor.get_n_active_objetivo(objtiveSelected, f, c);
-    editPosFila->set_int_val(f);
-    editPosColumna->set_int_val(c);
-  }
-  monitor.get_entidad(0)->setPosicion(setup3->get_int_val(), setup2->get_int_val());
-  monitor.get_entidad(0)->setOrientacion(static_cast<Orientacion>(setup6->get_int_val()));
+
+  // editPosColumna->enable();
+  // editPosFila->enable();
+  monitor.set_n_active_objetivo(0, setup5->get_int_val(), setup4->get_int_val());
+  monitor.get_n_active_objetivo(0, f, c);
+  // cout << "Entorno grafico f= " << f << "  c= " << c << endl;
+  editPosFila->set_int_val(f);
+  editPosColumna->set_int_val(c);
+
+  monitor.get_entidad(0)->setPosicion(setup30->get_int_val(), setup20->get_int_val());
+  monitor.get_entidad(0)->setOrientacion(static_cast<Orientacion>(setup60->get_int_val()));
+  monitor.get_entidad(1)->setPosicion(setup31->get_int_val(), setup21->get_int_val());
+  monitor.get_entidad(1)->setOrientacion(static_cast<Orientacion>(setup61->get_int_val()));
 }
 
 void botonConfigurarSimCANCEL(int valor)
@@ -493,16 +470,14 @@ void botonConfigurarNuevoMapaCB(int valor)
   botonEjecucion->disable();
   botonEjecutar->disable();
   botonSalir->enable();
-  editPosColumna->disable();
-  editPosFila->disable();
+  // editPosColumna->disable();
+  // editPosFila->disable();
   editTextPasos->disable();
   editTextRetardo->disable();
-  obj1->disable();
-  obj2->disable();
-  obj3->disable();
 
   int item = listbox->get_int_val();
   int posC, posF, orienta, semilla;
+  int SONposC, SONposF, SONorienta;
 
   if (item > 0)
   {
@@ -514,42 +489,37 @@ void botonConfigurarNuevoMapaCB(int valor)
     int nivel = group->get_int_val();
 
     /* Paso las variables de monitor a variables locales a este metodo */
-    semilla = 1;
+    semilla = monitor.get_semilla();
 
-    if (monitor.numero_entidades() > 0)
+    if (monitor.numero_entidades() > 1)
     {
       posC = monitor.get_entidad(0)->getCol();
       posF = monitor.get_entidad(0)->getFil();
       orienta = monitor.get_entidad(0)->getOrientacion();
+      if (!monitor.is_a_valid_cell_like_goal(posF, posC))
+      {
+        monitor.generate_a_valid_cell(posF, posC, orienta);
+      }
+      SONposC = monitor.get_entidad(1)->getCol();
+      SONposF = monitor.get_entidad(1)->getFil();
+      SONorienta = monitor.get_entidad(1)->getOrientacion();
+      while (!monitor.is_a_valid_cell_like_goal(SONposC, SONposF) or (posF == SONposF and posC == SONposC))
+      {
+        monitor.generate_a_valid_cell(SONposC, SONposF, orienta);
+      }
     }
     else
     {
-      monitor.generate_a_valid_cell(posF, posC, orienta);
+      do
+      {
+        monitor.generate_a_valid_cell(posF, posC, orienta);
+        monitor.generate_a_valid_cell(SONposF, SONposC, SONorienta);
+      } while (posF == SONposF and posC == SONposC);
     }
 
-    int numObj = monitor.get_number_active_objetivos();
+    int numObj = 1;
     int f, c, kk;
 
-    if (numObj == 3 and nivel > 3)
-    {
-      int f, c;
-      monitor.get_n_active_objetivo(2, f, c);
-      ObjFil3 = f;
-      ObjCol3 = c;
-      monitor.put_a_new_objetivo_front(f, c);
-      monitor.get_n_active_objetivo(1, f, c);
-      ObjFil2 = f;
-      ObjCol2 = c;
-      monitor.put_a_new_objetivo_front(f, c);
-    }
-
-    if (numObj == 1 and nivel > 3)
-    {
-      monitor.generate_a_valid_cell(ObjFil3, ObjCol3, kk);
-      monitor.put_a_new_objetivo_front(ObjFil3, ObjCol3);
-      monitor.generate_a_valid_cell(ObjFil2, ObjCol2, kk);
-      monitor.put_a_new_objetivo_front(ObjFil2, ObjCol2);
-    }
     monitor.get_n_active_objetivo(0, f, c);
     ObjFil1 = f;
     ObjCol1 = c;
@@ -558,9 +528,9 @@ void botonConfigurarNuevoMapaCB(int valor)
     monitor.startGame(nivel);
     if (monitor.inicializarJuego())
     {
-      monitor.inicializar(posF, posC, orienta);
+      monitor.inicializar(posF, posC, orienta, SONposF, SONposC, SONorienta, semilla);
       tMap = monitor.juegoInicializado();
-      if (nivel >= 3)
+      if (nivel >= 4)
       {
         MMmode = 0;
         drawMM->set_int_val(0);
@@ -582,37 +552,27 @@ void botonConfigurarNuevoMapaCB(int valor)
   GLUI_Panel *obj_panel = panelSelecMapaConfig->add_panel("Setup");
   setup1 = panelSelecMapaConfig->add_spinner_to_panel(obj_panel, "                Semilla ", GLUI_SPINNER_INT, &semilla);
 
-  GLUI_Panel *obj_subpanel0 = panelSelecMapaConfig->add_panel_to_panel(obj_panel, "Origen");
+  GLUI_Panel *obj_subpanel0 = panelSelecMapaConfig->add_panel_to_panel(obj_panel, "Origen Jugador");
+  setup30 = panelSelecMapaConfig->add_spinner_to_panel(obj_subpanel0, "            Fila ", GLUI_SPINNER_INT, &posF);
+  setup30->set_int_limits(0, num_filas, GLUI_LIMIT_WRAP);
+  setup20 = panelSelecMapaConfig->add_spinner_to_panel(obj_subpanel0, "     Columna ", GLUI_SPINNER_INT, &posC);
+  setup20->set_int_limits(0, num_col, GLUI_LIMIT_WRAP);
+  setup60 = panelSelecMapaConfig->add_spinner_to_panel(obj_subpanel0, " Orientacion ", GLUI_SPINNER_INT, &orienta);
+  setup60->set_int_limits(0, 8, GLUI_LIMIT_WRAP);
 
-  setup3 = panelSelecMapaConfig->add_spinner_to_panel(obj_subpanel0, "            Fila ", GLUI_SPINNER_INT, &posF);
-  setup3->set_int_limits(0, num_filas, GLUI_LIMIT_WRAP);
-  setup2 = panelSelecMapaConfig->add_spinner_to_panel(obj_subpanel0, "     Columna ", GLUI_SPINNER_INT, &posC);
-  setup2->set_int_limits(0, num_col, GLUI_LIMIT_WRAP);
-  setup6 = panelSelecMapaConfig->add_spinner_to_panel(obj_subpanel0, " Orientacion ", GLUI_SPINNER_INT, &orienta);
-  setup6->set_int_limits(0, 8, GLUI_LIMIT_WRAP);
+  GLUI_Panel *obj_subpanel1 = panelSelecMapaConfig->add_panel_to_panel(obj_panel, "Origen colaborador");
+  setup31 = panelSelecMapaConfig->add_spinner_to_panel(obj_subpanel1, "            Fila ", GLUI_SPINNER_INT, &SONposF);
+  setup31->set_int_limits(0, num_filas, GLUI_LIMIT_WRAP);
+  setup21 = panelSelecMapaConfig->add_spinner_to_panel(obj_subpanel1, "     Columna ", GLUI_SPINNER_INT, &SONposC);
+  setup21->set_int_limits(0, num_col, GLUI_LIMIT_WRAP);
+  setup61 = panelSelecMapaConfig->add_spinner_to_panel(obj_subpanel1, " Orientacion ", GLUI_SPINNER_INT, &SONorienta);
+  setup61->set_int_limits(0, 8, GLUI_LIMIT_WRAP);
 
-  if (ultimonivel != 3){
-    GLUI_Panel *obj_subpanel1 = panelSelecMapaConfig->add_panel_to_panel(obj_panel, "Objetivo 1");
-    setup5 = panelSelecMapaConfig->add_spinner_to_panel(obj_subpanel1, "        Fila ", GLUI_SPINNER_INT, &ObjFil1);
-    setup5->set_int_limits(0, num_filas, GLUI_LIMIT_WRAP);
-    setup4 = panelSelecMapaConfig->add_spinner_to_panel(obj_subpanel1, "    Columna  ", GLUI_SPINNER_INT, &ObjCol1);
-    setup4->set_int_limits(0, num_col, GLUI_LIMIT_WRAP);
-  }
-
-  if (ultimonivel > 3)
-  {
-    GLUI_Panel *obj_subpanel2 = panelSelecMapaConfig->add_panel_to_panel(obj_panel, "Objetivo 2");
-    setup7 = panelSelecMapaConfig->add_spinner_to_panel(obj_subpanel2, "         Fila ", GLUI_SPINNER_INT, &ObjFil2);
-    setup7->set_int_limits(0, num_filas, GLUI_LIMIT_WRAP);
-    setup8 = panelSelecMapaConfig->add_spinner_to_panel(obj_subpanel2, "     Columna  ", GLUI_SPINNER_INT, &ObjCol2);
-    setup8->set_int_limits(0, num_col, GLUI_LIMIT_WRAP);
-
-    GLUI_Panel *obj_subpanel3 = panelSelecMapaConfig->add_panel_to_panel(obj_panel, "Objetivo 3");
-    setup9 = panelSelecMapaConfig->add_spinner_to_panel(obj_subpanel3, "        Fila ", GLUI_SPINNER_INT, &ObjFil3);
-    setup9->set_int_limits(0, num_filas, GLUI_LIMIT_WRAP);
-    setup10 = panelSelecMapaConfig->add_spinner_to_panel(obj_subpanel3, "    Columna ", GLUI_SPINNER_INT, &ObjCol3);
-    setup10->set_int_limits(0, num_col, GLUI_LIMIT_WRAP);
-  }
+  GLUI_Panel *obj_subpanel2 = panelSelecMapaConfig->add_panel_to_panel(obj_panel, "Casilla Objetivo");
+  setup5 = panelSelecMapaConfig->add_spinner_to_panel(obj_subpanel2, "        Fila ", GLUI_SPINNER_INT, &ObjFil1);
+  setup5->set_int_limits(0, num_filas, GLUI_LIMIT_WRAP);
+  setup4 = panelSelecMapaConfig->add_spinner_to_panel(obj_subpanel2, "    Columna  ", GLUI_SPINNER_INT, &ObjCol1);
+  setup4->set_int_limits(0, num_col, GLUI_LIMIT_WRAP);
 
   panelSelecMapaConfig->add_button("Ok", 1, botonConfigurarSimOK);
   panelSelecMapaConfig->add_button("Finish", 1, botonConfigurarSimCANCEL);
@@ -621,22 +581,19 @@ void botonConfigurarNuevoMapaCB(int valor)
 void botonElegirMapaCB(int valor)
 {
 
-  panelSelecMapa = GLUI_Master.create_glui("Nuevo Juego");
+  panelSelecMapa = GLUI_Master.create_glui("Elige mapa y nivel");
 
   botonElegirMapa->disable();
   botonPaso->disable();
   botonEjecucion->disable();
   botonEjecutar->disable();
   botonSalir->disable();
-  editPosColumna->disable();
-  editPosFila->disable();
+  // editPosColumna->disable();
+  // editPosFila->disable();
   editTextPasos->disable();
   editTextRetardo->disable();
-  obj1->disable();
-  obj2->disable();
-  obj3->disable();
 
-  listbox = panelSelecMapa->add_listbox("Mapas", &ultimomapaPos);
+  listbox = panelSelecMapa->add_listbox("Mapa  ", &ultimomapaPos);
 
   int i = 1;
   vector<string> filesPaths = getFilesList("mapas/", ".map");
@@ -651,30 +608,15 @@ void botonElegirMapaCB(int valor)
 
   GLUI_Panel *obj_panel = panelSelecMapa->add_panel("Nivel");
   group = panelSelecMapa->add_radiogroup_to_panel(obj_panel, &ultimonivel);
-  panelSelecMapa->add_radiobutton_to_group(group, "Nivel 0: Demo                            ");
-  panelSelecMapa->add_radiobutton_to_group(group, "Nivel 1: Optimo en numero de pasos       ");
-  panelSelecMapa->add_radiobutton_to_group(group, "Nivel 2: Optimo en coste (un objetivo)   ");
-  panelSelecMapa->add_radiobutton_to_group(group, "Nivel 3: Reto 1 (Max. descubrir mapa)    ");
-  panelSelecMapa->add_radiobutton_to_group(group, "Nivel 4: Reto 2 (Max numero de misiones) ");
+  panelSelecMapa->add_radiobutton_to_group(group, "Nivel 0: Anchura para el agente jugador    ");
+  panelSelecMapa->add_radiobutton_to_group(group, "Nivel 1: Anchura para el agente colaborador  ");
+  panelSelecMapa->add_radiobutton_to_group(group, "Nivel 2: Dijkstra para el agente jugador   ");
+  panelSelecMapa->add_radiobutton_to_group(group, "Nivel 3: A* para el agente colaborador       ");
+  panelSelecMapa->add_radiobutton_to_group(group, "Nivel 4: Reto (Max puntuación en misiones) ");
 
   panelSelecMapa->add_button("Ok", 1, botonAceptarNuevoMapaCB);
   panelSelecMapa->add_button("Ok y Configurar", 2, botonConfigurarNuevoMapaCB);
   panelSelecMapa->add_button("Salir", 3, botonCancelarNuevoMapaCB);
-}
-
-void EleccionRadioCB(int valor)
-{
-  int pfil, pcol;
-  vector<unsigned int> v = monitor.get_active_objetivos();
-  for (int i = 0; i < monitor.get_active_objetivos().size(); i = i + 2)
-  {
-    monitor.get_n_active_objetivo(i / 2, pfil, pcol);
-    // cout << "Objetivo: " << i/2 << "  fila: " << pfil << " col:" << pcol << endl;
-  }
-  monitor.get_n_active_objetivo(objtiveSelected, pfil, pcol);
-  // cout << "Objetivo: " << objtiveSelected << "  fila: " << pfil << " col:" << pcol << endl;
-  editPosFila->set_int_val(pfil);
-  editPosColumna->set_int_val(pcol);
 }
 
 void botonPasoCB(int valor)
@@ -701,14 +643,14 @@ void setPosColumna(int valor)
 {
   // monitor.setObjCol(PosColumna);
   // cout << "setPosColumna()-> PosFila= " << PosFila << "  PosColumna= " << PosColumna << endl;
-  monitor.set_n_active_objetivo(objtiveSelected, PosFila, PosColumna);
+  monitor.set_n_active_objetivo(0, PosFila, PosColumna);
 }
 
 void setPosFila(int valor)
 {
   // monitor.setObjFil(PosFila);
   // cout << "setPosFila() -> PosFila= " << PosFila << "  PosColumna= " << PosColumna << endl;
-  monitor.set_n_active_objetivo(objtiveSelected, PosFila, PosColumna);
+  monitor.set_n_active_objetivo(0, PosFila, PosColumna);
 }
 
 void botonSalirCB(int valor)
@@ -717,34 +659,67 @@ void botonSalirCB(int valor)
   exit(0);
 }
 
-Orientacion Next(Orientacion x){
+Orientacion Next(Orientacion x)
+{
   switch (x)
   {
-  case norte: return noreste; break;
-  case noreste: return este; break;
-  case este: return sureste; break;
-  case sureste: return sur; break;
-  case sur: return suroeste; break;
-  case suroeste: return oeste; break;
-  case oeste: return noroeste; break;
-  case noroeste: return norte; break;
+  case norte:
+    return noreste;
+    break;
+  case noreste:
+    return este;
+    break;
+  case este:
+    return sureste;
+    break;
+  case sureste:
+    return sur;
+    break;
+  case sur:
+    return suroeste;
+    break;
+  case suroeste:
+    return oeste;
+    break;
+  case oeste:
+    return noroeste;
+    break;
+  case noroeste:
+    return norte;
+    break;
   }
 }
 
-Orientacion Previous(Orientacion x){
+Orientacion Previous(Orientacion x)
+{
   switch (x)
   {
-  case norte: return noroeste; break;
-  case noroeste: return oeste; break;
-  case oeste: return suroeste; break;
-  case suroeste: return sur; break;
-  case sur: return sureste; break;
-  case sureste: return este; break;
-  case este: return noreste; break;
-  case noreste: return norte; break;
+  case norte:
+    return noroeste;
+    break;
+  case noroeste:
+    return oeste;
+    break;
+  case oeste:
+    return suroeste;
+    break;
+  case suroeste:
+    return sur;
+    break;
+  case sur:
+    return sureste;
+    break;
+  case sureste:
+    return este;
+    break;
+  case este:
+    return noreste;
+    break;
+  case noreste:
+    return norte;
+    break;
   }
 }
-
 
 void mouseClick(int button, int state, int x, int y)
 {
@@ -767,7 +742,7 @@ void mouseClick(int button, int state, int x, int y)
   {
     if ((nx >= 0) and (nx <= tMap - 1) and (ny >= 0) and (ny <= tMap - 1))
     {
-      monitor.get_entidad(0)->setPosicion(ny,nx);
+      monitor.get_entidad(0)->setPosicion(ny, nx);
     }
   }
   else if ((button == GLUT_MIDDLE_BUTTON) and (state == GLUT_DOWN))
@@ -775,9 +750,10 @@ void mouseClick(int button, int state, int x, int y)
     if ((nx >= 0) and (nx <= tMap - 1) and (ny >= 0) and (ny <= tMap - 1))
     {
       Orientacion bru = monitor.get_entidad(0)->getOrientacion();
-      bru = (Orientacion) ((bru+1) % 8);
-      monitor.get_entidad(0)->setOrientacion(bru);    }
-  }  
+      bru = (Orientacion)((bru + 1) % 8);
+      monitor.get_entidad(0)->setOrientacion(bru);
+    }
+  }
 }
 
 void lanzar_motor_grafico(int argc, char **argv)
@@ -792,7 +768,7 @@ void lanzar_motor_grafico(int argc, char **argv)
   glutInitWindowPosition(300, 0);
 
   // Main Window
-  ventanaPrincipal = glutCreateWindow("Practica 2: Agentes Deliberativos/Reactivos. Curso 21/22");
+  ventanaPrincipal = glutCreateWindow("Practica 2: Agentes Deliberativos/Reactivos. Curso 23/24");
   // Main Window callback function
   glutReshapeFunc(reshape);
   glutDisplayFunc(display_ventPrincipal);
@@ -835,32 +811,20 @@ void lanzar_motor_grafico(int argc, char **argv)
   // lineaVacia = panelIU->add_statictext("");
 
   GLUI_Panel *obj_panel = panelIU->add_panel("Ir a...");
-  if (!monitor.there_are_active_objetivo())
-  {
-    monitor.put_active_objetivos(1);
-  }
-  monitor.get_n_active_objetivo(0, PosFila, PosColumna);
-  // cout << PosFila << " " << PosColumna << endl;
-  editPosFila = panelIU->add_spinner_to_panel(obj_panel, "   Fila", GLUI_SPINNER_INT, &PosFila);
-  editPosColumna = panelIU->add_spinner_to_panel(obj_panel, "Columna", GLUI_SPINNER_INT, &PosColumna);
 
-  // editPosFila = panelIU->add_edittext_to_panel(obj_panel, "Fila", GLUI_EDITTEXT_INT, &PosFila, -1, setPosFila);
-  // editPosColumna = panelIU->add_edittext_to_panel(obj_panel, "Columna", GLUI_EDITTEXT_INT, &PosColumna, -1, setPosColumna);
+  monitor.put_active_objetivos(1);
+
+  monitor.get_n_active_objetivo(0, PosFila, PosColumna);
+  // editPosFila = panelIU->add_spinner_to_panel(obj_panel, "   Fila", GLUI_SPINNER_INT, &PosFila);
+  // editPosColumna = panelIU->add_spinner_to_panel(obj_panel, "Columna", GLUI_SPINNER_INT, &PosColumna);
+
+  editPosFila = panelIU->add_edittext_to_panel(obj_panel, "Fila", GLUI_EDITTEXT_INT, &PosFila, -1, setPosFila);
+  editPosColumna = panelIU->add_edittext_to_panel(obj_panel, "Columna", GLUI_EDITTEXT_INT, &PosColumna, -1, setPosColumna);
   setPosColumna(PosColumna);
   setPosFila(PosFila);
 
-  editPosFila->set_int_limits(0, 100, GLUI_LIMIT_WRAP);
-  editPosColumna->set_int_limits(0, 100, GLUI_LIMIT_WRAP);
-
-  panelIU->add_column_to_panel(obj_panel, true);
-
-  group1 = panelIU->add_radiogroup_to_panel(obj_panel, &objtiveSelected, 3, EleccionRadioCB);
-  obj1 = panelIU->add_radiobutton_to_group(group1, "Objetivo 1");
-  obj2 = panelIU->add_radiobutton_to_group(group1, "Objetivo 2");
-  obj3 = panelIU->add_radiobutton_to_group(group1, "Objetivo 3");
-
-  obj2->disable();
-  obj3->disable();
+  // editPosFila->set_int_limits(0, 100, GLUI_LIMIT_WRAP);
+  // editPosColumna->set_int_limits(0, 100, GLUI_LIMIT_WRAP);
 
   // lineaVacia = panelIU->add_statictext("");
 
@@ -935,12 +899,7 @@ void lanzar_motor_grafico_verOnline(int argc, char **argv, EnLinea &argumentos)
   monitor.setMapa(dirMapa);
   tMap = monitor.getMapa()->getNFils();
   monitor.startGame(argumentos.level);
-  /*if (argumentos.level>=3){
-    int a = monitor.get_active_objetivos().size();
-    if (a>1) obj2->enable(); else {obj2->disable(); obj3->disable();}
-    if (a>2) obj3->enable(); else obj3->disable();
-  }*/
-  if (argumentos.level >= 3)
+  if (argumentos.level == 4)
   {
     MMmode2 = 0;
     MMmode = 0;
@@ -953,14 +912,10 @@ void lanzar_motor_grafico_verOnline(int argc, char **argv, EnLinea &argumentos)
 
   // Posicion inicial del agente
   monitor.setListObj(argumentos.listaObjetivos);
-  monitor.inicializar(argumentos.fil_inicial, argumentos.col_inicial, argumentos.ori_inicial);
+  monitor.inicializar(argumentos.posInicialJugador.f, argumentos.posInicialJugador.c, argumentos.posInicialJugador.brujula, argumentos.posInicialColaborador.f,
+                      argumentos.posInicialColaborador.c, argumentos.posInicialColaborador.brujula, argumentos.semilla);
 
-
-  monitor.get_entidad(0)->setOrientacion(static_cast<Orientacion>(argumentos.ori_inicial));
-  // monitor.get_entidad(0)->setObjetivo(aux.first,aux.second);
   monitor.get_entidad(0)->setBateria(3000);
-  monitor.get_entidad(0)->Cogio_Bikini(false);
-  monitor.get_entidad(0)->Cogio_Zapatillas(false);
   monitor.setPasos(1);
   monitor.setRetardo(0);
 
@@ -974,7 +929,7 @@ void lanzar_motor_grafico_verOnline(int argc, char **argv, EnLinea &argumentos)
   glutInitWindowPosition(300, 0);
 
   // Main Window
-  ventanaPrincipal = glutCreateWindow("Practica 2: Agentes Deliberativos/Reactivos. Curso 21/22. Version BAJO PARAMETROS");
+  ventanaPrincipal = glutCreateWindow("Practica 2: Agentes Deliberativos/Reactivos. Curso 23/24. Version BAJO PARAMETROS");
   // Main Window callback function
   glutReshapeFunc(reshape);
   glutDisplayFunc(display_ventPrincipal);
@@ -994,7 +949,6 @@ void lanzar_motor_grafico_verOnline(int argc, char **argv, EnLinea &argumentos)
 
   glutInitWindowPosition(IU_ancho_ventana * 0.7, 50);
   glutInitWindowSize(50, 50);
-
 
   GLUI *panelIU = GLUI_Master.create_glui_subwindow(vistaIU, GLUI_SUBWINDOW_TOP);
   panelIU->set_main_gfx_window(vistaIU);
@@ -1016,37 +970,22 @@ void lanzar_motor_grafico_verOnline(int argc, char **argv, EnLinea &argumentos)
   // lineaVacia = panelIU->add_statictext("");
 
   GLUI_Panel *obj_panel = panelIU->add_panel("Ir a...");
-   editPosFila = panelIU->add_spinner_to_panel(obj_panel, "   Fila", GLUI_SPINNER_INT, &PosFila);
-   editPosColumna = panelIU->add_spinner_to_panel(obj_panel, "Columna", GLUI_SPINNER_INT, &PosColumna);
+  // editPosFila = panelIU->add_spinner_to_panel(obj_panel, "   Fila", GLUI_SPINNER_INT, &PosFila);
+  // editPosColumna = panelIU->add_spinner_to_panel(obj_panel, "Columna", GLUI_SPINNER_INT, &PosColumna);
 
-
-  if (argumentos.level != 3){
-    if (!monitor.there_are_active_objetivo())
-    {
-      monitor.put_active_objetivos(1);
-    }
-    monitor.get_n_active_objetivo(0, PosFila, PosColumna);
-
-    setPosColumna(PosColumna);
-    setPosFila(PosFila);
-    editPosFila->set_int_limits(0, 100, GLUI_LIMIT_WRAP);
-    editPosColumna->set_int_limits(0, 100, GLUI_LIMIT_WRAP);
+  if (!monitor.there_are_active_objetivo())
+  {
+    monitor.put_active_objetivos(1);
   }
-  else {
-    editPosFila->disable();
-    editPosColumna->disable();
-  }
+  monitor.get_n_active_objetivo(0, PosFila, PosColumna);
 
-  panelIU->add_column_to_panel(obj_panel, true);
+  editPosFila = panelIU->add_edittext_to_panel(obj_panel, "Fila", GLUI_EDITTEXT_INT, &PosFila, -1, setPosFila);
+  editPosColumna = panelIU->add_edittext_to_panel(obj_panel, "Columna", GLUI_EDITTEXT_INT, &PosColumna, -1, setPosColumna);
 
-  group1 = panelIU->add_radiogroup_to_panel(obj_panel, &objtiveSelected, 3, EleccionRadioCB);
-  obj1 = panelIU->add_radiobutton_to_group(group1, "Objetivo 1");
-  obj2 = panelIU->add_radiobutton_to_group(group1, "Objetivo 2");
-  obj3 = panelIU->add_radiobutton_to_group(group1, "Objetivo 3");
-
-  if (argumentos.level == 3){
-    group1->disable();
-  }
+  setPosColumna(PosColumna);
+  setPosFila(PosFila);
+  // editPosFila->set_int_limits(0, 100, GLUI_LIMIT_WRAP);
+  // editPosColumna->set_int_limits(0, 100, GLUI_LIMIT_WRAP);
 
   // lineaVacia = panelIU->add_statictext("");
 
@@ -1070,7 +1009,6 @@ void lanzar_motor_grafico_verOnline(int argc, char **argv, EnLinea &argumentos)
   botonEjecutar = panelIU->add_button_to_panel(run_panel, "Ciclo", 0, botonEjecutarCB);
   botonEjecutar->set_alignment(GLUI_ALIGN_CENTER);
   botonEjecucion = panelIU->add_button_to_panel(run_panel, "Ejecucion", 0, botonEjecucionCB);
-
 
   lineaVacia = panelIU->add_statictext("");
 
@@ -1101,10 +1039,7 @@ void lanzar_motor_grafico_verOnline(int argc, char **argv, EnLinea &argumentos)
 
   lineaVacia = panelIU->add_statictext("");
 
-
-
   monitor.juegoInicializado();
-
 
   botonPaso->enable();
   botonEjecucion->enable();

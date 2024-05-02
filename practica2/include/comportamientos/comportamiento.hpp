@@ -6,8 +6,17 @@
 using namespace std;
 
 enum Orientacion {norte, noreste, este, sureste, sur, suroeste, oeste, noroeste};
-enum Action {actFORWARD, actTURN_L, actTURN_R, actSEMITURN_L, actSEMITURN_R, actWHEREIS, actIDLE};
+enum Action {actWALK, actRUN, actTURN_L, actTURN_SR, actWHEREIS, act_CLB_WALK, act_CLB_TURN_SR, act_CLB_STOP, actIDLE};
 
+struct ubicacion{
+    int f;
+    int c;
+    Orientacion brujula;
+
+    bool operator==(const ubicacion &ub)const {
+      return (f == ub.f and c == ub.c and brujula == ub.brujula);
+    }    
+};
 
 struct Sensores {
   int nivel;
@@ -18,12 +27,19 @@ struct Sensores {
   int posF;
   int posC;
   Orientacion sentido; // Orientacion
+  int CLBposF;
+  int CLBposC;
+  Orientacion CLBsentido;
+  Action ActionSent;
   double tiempo;
   vector< unsigned char> terreno;
-  vector< unsigned char> superficie;
-  int num_destinos;
-  vector<unsigned int> destino;
+  vector< unsigned char> agentes;
+  int destinoF;
+  int destinoC;
+  bool CLBgoal;
 };
+
+
 
 class Comportamiento {
   public:
