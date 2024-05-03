@@ -549,7 +549,7 @@ queue<Action> ComportamientoJugador::nivel_2(const estado &inicio, const ubicaci
 {
 	size_t accion_inicio, accion_fin, current_coste, coste_hijo;
 	accion_inicio = (size_t) actWALK;
-	accion_fin = (size_t) actIDLE;
+	accion_fin = (size_t) actTURN_SR;
 	set<nodo> frontier;
 	set<nodo> explored;
 	queue<Action> plan, current_plan;
@@ -557,7 +557,7 @@ queue<Action> ComportamientoJugador::nivel_2(const estado &inicio, const ubicaci
 	current_node.st = inicio;
 	current_node.coste_acumulado = 0;
 	frontier.insert(current_node);
-	bool solution_found = es_solucion(current_node.st, final);
+	bool solution_found = es_solucion(current_node.st, final, false);
 
 
 	while (!frontier.empty() and !solution_found)
@@ -570,17 +570,14 @@ queue<Action> ComportamientoJugador::nivel_2(const estado &inicio, const ubicaci
 
 		for (size_t action = accion_inicio; action <= accion_fin && !solution_found; action++)
 		{
-			if (action == (size_t) actWHEREIS) continue;
-
 			//Actualizo los valores del nodo hijo
 			child.secuencia = current_plan;
 			child.coste_acumulado = current_coste + coste_casilla((Action) action, current_node.st.jugador, mapa);
-			child.st = apply_seguro((Action) action, current_node.st, mapa);
+			child.st = apply((Action) action, current_node.st, mapa);
 			child.secuencia.push((Action) action);
 			
-
 			// Si el hijo es solución, guardo el plan y lo muestro
-			if ((solution_found = es_solucion(child.st, final)))
+			if ((solution_found = es_solucion(child.st, final, false)))
 			{
 				plan = child.secuencia;
 				cout << "PLAN ENCONTRADO" << endl;
