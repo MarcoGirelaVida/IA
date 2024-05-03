@@ -5,6 +5,7 @@
 #include <cmath>
 #include <set>
 #include <stack>
+#include <queue>
 
 ubicacion ComportamientoJugador::traductor_posicion(const ubicacion &pos, const int offset_fil, const int offset_col) const
 {
@@ -29,71 +30,54 @@ ubicacion ComportamientoJugador::traductor_posicion(const ubicacion &pos, const 
 	return {pos.f + posfil_tmp, pos.c + poscol_tmp, pos.brujula};
 }
 
-list<Action> ComportamientoJugador::traductor_plan_colaborador(const list<Action> &plan) const
-{
-	list<Action> plan_colab;
-	for(const auto &a : plan)
-	{
-		switch (a)
-		{
-		case actRUN:
-			plan_colab.push_back(act_CLB_WALK);	plan_colab.push_back(act_CLB_WALK);
-			break;
-
-		case actWALK:
-			plan_colab.push_back(act_CLB_WALK);
-			break;
-
-		case actTURN_SR:
-			plan_colab.push_back(act_CLB_TURN_SR);
-			break;
-
-		case actTURN_L:
-			plan_colab.push_back(act_CLB_TURN_SR);	plan_colab.push_back(act_CLB_TURN_SR);	plan_colab.push_back(act_CLB_TURN_SR);
-			plan_colab.push_back(act_CLB_TURN_SR);	plan_colab.push_back(act_CLB_TURN_SR);	plan_colab.push_back(act_CLB_TURN_SR);	
-			break;
-
-		case actIDLE:
-			plan_colab.push_back(act_CLB_STOP);
-			break;
-
-		default:
-			cerr << "ERROR EN EL TRADUCTOR DE ACCIONES DEL COLABORADOR" << endl;
-			cerr << "ACCION INTRODUCIDA: ";
-			accion_string(a);
-			cerr << endl;
-			exit(1);
-		}
-	}
-
-	return plan_colab;
-}
-
 bool ComportamientoJugador::es_solucion (const estado &st, const ubicacion &final, bool colaborador) const
 {
 	ubicacion ub = colaborador ? st.colaborador : st.jugador;
 	return (ub.f == final.f and ub.c == final.c);
 }
 
-void ComportamientoJugador::mostrar_lista(const list<nodo> &l, bool completa) const
+void ComportamientoJugador::mostrar_lista(const queue<nodo> &q, bool completa) const
 {
 	size_t num_paso = 1;
-	auto it = l.begin();
-	while (it != l.end())
+	queue<nodo> copy = q;
+	while (!copy.empty())
 	{
 		if (completa)
 		{
 			cerr << "------ PASO " << num_paso << " ------" << endl;
-			mostrar_nodo(*it, false);
+			mostrar_nodo(copy.front(), false);
 			cerr << endl << endl;
 		}
 		else
 		{
 			cerr << "{";
-			PintaPlan(it->secuencia);
+			PintaPlan((copy.front()).secuencia);
 			cerr << "}, ";
 		}
-		it++;
+		copy.pop();
+		num_paso++;
+	}
+}
+
+void ComportamientoJugador::mostrar_lista(const priority_queue<nodo> &q, bool completa) const
+{
+	size_t num_paso = 1;
+	priority_queue<nodo> copy = q;
+	while (!copy.empty())
+	{
+		if (completa)
+		{
+			cerr << "------ PASO " << num_paso << " ------" << endl;
+			mostrar_nodo(copy.top(), false);
+			cerr << endl << endl;
+		}
+		else
+		{
+			cerr << "{";
+			PintaPlan((copy.top()).secuencia);
+			cerr << "}, ";
+		}
+		copy.pop();
 		num_paso++;
 	}
 }
@@ -120,6 +104,7 @@ void ComportamientoJugador::mostrar_estado(const estado &st) const
 void ComportamientoJugador::mostrar_nodo(const nodo &nd, bool mostrar_secuencia) const
 {
 	mostrar_estado(nd.st);
+	cerr << "Coste acumulado: " << nd.coste_acumulado << endl;
 	if (mostrar_secuencia)
 	{
 		cerr << endl << "Secuencia: ";
@@ -133,13 +118,13 @@ void ComportamientoJugador::mostrar_nodo(const nodo &nd, bool mostrar_secuencia)
 	}
 }
 
-void ComportamientoJugador::PintaPlan(const list<Action> &plan) const
+void ComportamientoJugador::PintaPlan(const queue<Action> &plan) const
 {
-	auto it = plan.begin();
-	while (it != plan.end())
+	queue<Action> copy = plan;
+	while (!copy.empty())
 	{
-		accion_string(*it);
-		it++;
+		accion_string(copy.front());
+		copy.pop();
 	}
 
 	cout << "(size: " << plan.size() << ")";
@@ -219,6 +204,8 @@ Action ComportamientoJugador::think(Sensores sensores)
 			plan = buscar_objetivo_anchura(c_state, goal, mapaResultado, false);
 		else if (sensores.nivel == 1)
 			plan = nivel_1(c_state, goal, mapaResultado);
+		else if (sensores.nivel == 2)
+			plan = nivel_2(c_state, goal, mapaResultado);
 		else
 		{
 			cerr << "ERROR: Nivel no implementado" << endl;
@@ -238,7 +225,7 @@ Action ComportamientoJugador::think(Sensores sensores)
 	else if (plan.size())
 	{
 		accion = plan.front();
-		plan.pop_front();
+		plan.pop();
 	}
 	else
 	{
@@ -249,7 +236,70 @@ Action ComportamientoJugador::think(Sensores sensores)
 	return accion;
 }
 
-//---------------------- Implementación de la busqueda en anchura ---------------------------
+//-------------------------------------------------
+int ComportamientoJugador::coste_casilla(const Action &a, const ubicacion &ub, const vector<vector<unsigned char>> &mapa)
+{
+	switch (mapa[ub.f][ub.c])
+	{
+	// Agua
+	case 'A':
+		switch (a)
+		{
+		case actWALK: return bikini ? 10 : 100;
+		case act_CLB_WALK: return bikini ? 10 : 100;
+		case actRUN: return bikini ? 15 : 150;
+		case actTURN_L: return bikini ? 5 : 30;
+		case actTURN_SR: return bikini ? 2 : 10;
+		case act_CLB_TURN_SR: return bikini ? 2 : 10;
+		}
+	// Bosque
+	case 'B':
+		switch (a)
+		{
+		case actWALK: return zapatillas ? 15 : 50;
+		case act_CLB_WALK: return zapatillas ? 15 : 50;
+		case actRUN: return zapatillas ? 25 : 75;
+		case actTURN_L: return zapatillas ? 1 : 7;
+		case actTURN_SR: return zapatillas ? 1 : 5;
+		case act_CLB_TURN_SR: return zapatillas ? 1 : 5;
+		}
+	// Arena
+	case 'T':
+		switch (a)
+		{
+		case actWALK: return 2;
+		case act_CLB_WALK: return 2;
+		case actRUN: return 3;
+		case actTURN_L: return 2;
+		case actTURN_SR: return 1;
+		case act_CLB_TURN_SR: return 1;
+		}
+
+	// Piedra
+	case 'S': return 1;
+	// Casilla de ubicación
+	case 'G': return 1;
+	// Bikini
+	case 'K': if(!bikini) bikini = true; return 1;
+	// Zapatillas
+	case 'D': if(!zapatillas) zapatillas = true; return 1;
+	// Recarga
+	case 'X':  recargador_encontrado = true; ubicacion_recargador = ub; return 1;
+	// Muro
+	//case 'M': return 0;
+	// Precipicio
+	//case 'P': return 0;
+	// Desconocida
+ 	//case '?': return 1;
+	// Jugador
+	//case 'a': return 0;
+	default:
+		cerr << "ERROR EN ASIGNACION DE COSTE DE CASILLA" << endl;
+		cerr << "Casilla introducida: " << mapa[ub.f][ub.c] << endl;
+		exit(1);
+	}
+}
+
 bool ComportamientoJugador::esta_en_rango_vision(const estado &st) const
 {
 	//cerr << "Estoy en poner terreno en matriz" << endl;
@@ -286,11 +336,6 @@ bool ComportamientoJugador::casilla_transitable(const estado &cst, const vector<
 	return mapa[pos.f][pos.c] != 'P' and mapa[pos.f][pos.c] != 'M' and !(cst.jugador.f == cst.colaborador.f and cst.jugador.c == cst.colaborador.c);
 }
 
-bool ComportamientoJugador::casilla_transitable(const estado &cst, const vector<vector<unsigned char>> &mapa, const list<estado> &plan) const
-{
-	return casilla_transitable(cst, mapa) and !Find(cst, plan);
-}
-
 ubicacion ComportamientoJugador::next_casilla(const ubicacion &pos) const
 {
 	unsigned char offsetcol = 0;
@@ -299,23 +344,43 @@ ubicacion ComportamientoJugador::next_casilla(const ubicacion &pos) const
 	return traductor_posicion(pos, -1, offsetcol);
 }
 
-bool ComportamientoJugador::Find(const estado &item, const list<estado> &lista) const
+bool ComportamientoJugador::Find(const estado &item, const queue<estado> &cola) const
 {
-	auto it = lista.begin();
-	while (it != lista.end() and !((*it) == item))
-		it++;
+	queue<estado> copy = cola;
+	while (!copy.empty())
+	{
+		if (copy.front() == item)
+			return true;
+		copy.pop();
+	}
 
-	return (!(it == lista.end()));
+	return false;
 }
 
-bool ComportamientoJugador::Find(const estado &item, const list<nodo> &lista) const
+bool ComportamientoJugador::Find(const estado &item, const queue<nodo> &cola) const
 {
-	auto it = lista.begin();
-	while (it != lista.end() and !(it->st == item))
-		it++;
+	queue<nodo> copy = cola;
+	while (!copy.empty())
+	{
+		if (copy.front().st == item)
+			return true;
+		copy.pop();
+	}
 
-	return (!(it == lista.end()));
+	return false;
+}
 
+bool ComportamientoJugador::actualizar_frontera(const estado &item, priority_queue<nodo> &cola) const
+{
+	priority_queue<nodo> copy = cola;
+	while (!copy.empty())
+	{
+		if (copy.top().st == item)
+			return true;
+		copy.pop();
+	}
+
+	return false;
 }
 
 estado ComportamientoJugador::apply_seguro(const Action &a, const estado &st, const vector<vector<unsigned char>> &mapa) const
@@ -409,24 +474,24 @@ estado ComportamientoJugador::apply(const Action &a, const estado &st, const vec
 	return st_result;
 }
 
-list<Action> ComportamientoJugador::nivel_1(const estado &inicio, const ubicacion &final, const vector<vector<unsigned char>> &mapa)
+queue<Action> ComportamientoJugador::nivel_1(const estado &inicio, const ubicacion &final, const vector<vector<unsigned char>> &mapa)
 {
 	size_t accion_inicio, accion_fin;
 	accion_inicio = (size_t) actWALK;
 	accion_fin = (size_t) actIDLE;
-	list<nodo> frontier;
+	queue<nodo> frontier;
 	set<nodo> explored;
-	list<Action> plan, current_plan;
+	queue<Action> plan, current_plan;
 	nodo current_node, child;
 	current_node.st = inicio;
-	frontier.push_back(current_node);
+	frontier.push(current_node);
 	bool solution_found = es_solucion(current_node.st, final);
 
 
 	while (!frontier.empty() and !solution_found)
 	{
 		current_plan = current_node.secuencia;
-		frontier.pop_front();
+		frontier.pop();
 		explored.insert(current_node);
 
 		for (size_t action = accion_inicio; action <= accion_fin && !solution_found; action++)
@@ -436,34 +501,15 @@ list<Action> ComportamientoJugador::nivel_1(const estado &inicio, const ubicacio
 			//Actualizo los valores del nodo hijo
 			child.secuencia = current_plan;
 			child.st = apply_seguro((Action) action, current_node.st, mapa);
-			child.secuencia.push_back((Action) action);
-
+			child.secuencia.push((Action) action);
 			// Realmente esto se hace implicitamente al hacer la búsqueda en explorados
 			if (child.st == current_node.st)
 				continue;
 			
-
-		//if (
-		//	(child.st.jugador.f == 13 and child.st.jugador.c == 19 and
-		//	child.st.colaborador.f == 14 and child.st.colaborador.c == 19 and 
-		//	child.st.jugador.brujula == sur and child.st.colaborador.brujula == sureste and
-		//	child.st.ultima_orden_colaborador == act_CLB_TURN_SR)
-		//	//and
-		//	//(current_node.st.jugador.f == 13 and current_node.st.jugador.c == 19 and 
-		//	//current_node.st.colaborador.f == 14 and current_node.st.colaborador.c == 19
-		//	//and current_node.st.jugador.brujula == sur and current_node.st.colaborador.brujula == sureste)
-		//)
-		//	{
-		//		cerr << "------ NODO ACTUAL ------" << endl;
-		//		mostrar_nodo(current_node, false);
-		//		cerr << endl;
-//
 		//		cerr << "------ NODO HIJO ------" << endl;
 		//		mostrar_nodo(child, false);
 		//		cerr << endl;
-		//	}
 
-		// EL PROBLEMA ES QUE SI TOMA UNA DECISIÓN QUE LLEVA UN CHOQUE, EL APPLY DEVUELVE COMO SI NO PASARA NADA Y SE APLICASE LA ACCIÓN DEL COLABORADOR ANTERIOR
 			// Si el hijo es solución, guardo el plan y lo muestro
 			if ((solution_found = es_solucion(child.st, final)))
 			{
@@ -475,7 +521,7 @@ list<Action> ComportamientoJugador::nivel_1(const estado &inicio, const ubicacio
 			}
 			// Si no, lo añado a la frontera (si no ha sido explorado ya)
 			else if (explored.find(child) == explored.end())
-				frontier.push_back(child);
+				frontier.push(child);
 
 			//cerr << "FRONTIER ACTUAL: ";
 			//mostrar_lista(frontier);
@@ -489,7 +535,7 @@ list<Action> ComportamientoJugador::nivel_1(const estado &inicio, const ubicacio
 			current_node = frontier.front();
 			while (!frontier.empty() and explored.find(current_node) != explored.end())
 			{
-				frontier.pop_front();
+				frontier.pop();
 				if (!frontier.empty())
 					current_node = frontier.front();
 			}
@@ -499,30 +545,105 @@ list<Action> ComportamientoJugador::nivel_1(const estado &inicio, const ubicacio
 	return plan;
 }
 
-list<Action> ComportamientoJugador::buscar_objetivo_anchura(const estado &inicio, const ubicacion &final, const vector<vector<unsigned char>> &mapa, bool colaborador)
-{// if (plan.size() == 0)
+queue<Action> ComportamientoJugador::nivel_2(const estado &inicio, const ubicacion &final, const vector<vector<unsigned char>> &mapa)
+{
+	size_t accion_inicio, accion_fin, current_coste, coste_hijo;
+	accion_inicio = (size_t) actWALK;
+	accion_fin = (size_t) actIDLE;
+	set<nodo> frontier;
+	set<nodo> explored;
+	queue<Action> plan, current_plan;
+	nodo current_node, child;
+	current_node.st = inicio;
+	current_node.coste_acumulado = 0;
+	frontier.insert(current_node);
+	bool solution_found = es_solucion(current_node.st, final);
+
+
+	while (!frontier.empty() and !solution_found)
+	{
+		current_node = *frontier.begin();
+		current_plan = current_node.secuencia;
+		current_coste = current_node.coste_acumulado;
+		frontier.erase(current_node);
+		explored.insert(current_node);
+
+		for (size_t action = accion_inicio; action <= accion_fin && !solution_found; action++)
+		{
+			if (action == (size_t) actWHEREIS) continue;
+
+			//Actualizo los valores del nodo hijo
+			child.secuencia = current_plan;
+			child.coste_acumulado = current_coste + coste_casilla((Action) action, current_node.st.jugador, mapa);
+			child.st = apply_seguro((Action) action, current_node.st, mapa);
+			child.secuencia.push((Action) action);
+			
+
+			// Si el hijo es solución, guardo el plan y lo muestro
+			if ((solution_found = es_solucion(child.st, final)))
+			{
+				plan = child.secuencia;
+				cout << "PLAN ENCONTRADO" << endl;
+				//PintaPlan(plan);
+				mostrar_lista(generar_nodos_secuencia(child.secuencia), true);
+				cout << endl;
+			}
+			// Si no, lo busco en frontera y actualizo su valor, si fuese necesario
+			else if (explored.find(child) == explored.end())
+			{
+				if (frontier.find(child) != frontier.end())
+				{
+					auto it = frontier.find(child);
+					if (it->coste_acumulado > child.coste_acumulado)
+					{
+						frontier.erase(it);
+						frontier.insert(child);
+					}
+				}
+				else
+					frontier.insert(child);
+			}	
+
+			//cerr << "------ NODO HIJO ------" << endl;
+			//mostrar_nodo(child, false);
+			//cerr << endl;
+			//cerr << "FRONTIER ACTUAL: ";
+			//mostrar_lista(frontier);
+			//cerr << endl << "-----------------------" << endl << endl;
+		}
+
+		// Seleccionamos le siguiente nodo a explorar
+		//if (!solution_found and !frontier.empty())
+		//	current_node = *frontier.begin();
+	}
+
+	return plan;
+}
+
+queue<Action> ComportamientoJugador::buscar_objetivo_anchura(const estado &inicio, const ubicacion &final, const vector<vector<unsigned char>> &mapa, bool colaborador)
+{
 	size_t accion_inicio, accion_fin;
 	accion_inicio = colaborador ? (size_t) act_CLB_WALK : (size_t) actWALK;
 	accion_fin = colaborador ? (size_t) act_CLB_TURN_SR : (size_t) actTURN_SR;
-	list<nodo> frontier;
+	queue<nodo> frontier;
 	set<nodo> explored;
-	list<Action> plan, current_plan;
+	queue<Action> plan, current_plan;
 	nodo current_node, child;
 	current_node.st = inicio;
-	frontier.push_back(current_node);
+	frontier.push(current_node);
 	bool solution_found = es_solucion(current_node.st, final, colaborador);
 
 	while (!frontier.empty() and !solution_found)
 	{
 		current_plan = current_node.secuencia;
-		frontier.pop_front();
+		frontier.pop();
 		explored.insert(current_node);
 
 		for (size_t action = accion_inicio; action <= accion_fin && !solution_found; action++)
 		{
 			//Actualizo los valores del nodo hijo
 			child.secuencia = current_plan;
-			child.secuencia.push_back((Action) action);
+			child.secuencia.push((Action) action);
 			child.st = apply((Action) action, current_node.st, mapa);
 
 			//cerr << "------ NODO HIJO ------" << endl;
@@ -540,7 +661,7 @@ list<Action> ComportamientoJugador::buscar_objetivo_anchura(const estado &inicio
 
 			// Si no, lo añado a la frontera (si no ha sido explorado ya)
 			else if (explored.find(child) == explored.end())
-				frontier.push_back(child);
+				frontier.push(child);
 
 			//cerr << "FRONTIER ACTUAL: ";
 			//mostrar_lista(frontier);
@@ -554,7 +675,7 @@ list<Action> ComportamientoJugador::buscar_objetivo_anchura(const estado &inicio
 			current_node = frontier.front();
 			while (!frontier.empty() and explored.find(current_node) != explored.end())
 			{
-				frontier.pop_front();
+				frontier.pop();
 				if (!frontier.empty())
 					current_node = frontier.front();
 			}
@@ -576,34 +697,34 @@ void ComportamientoJugador::anula_matriz(vector<vector<unsigned char>> & matriz)
 	
 }
 
-list<nodo> ComportamientoJugador::generar_nodos_secuencia(const list<Action> &plan) const
+queue<nodo> ComportamientoJugador::generar_nodos_secuencia(const queue<Action> &plan) const
 {
-	list<nodo> nodos;
+	queue<nodo> nodos;
+	queue<Action> copy = plan;
 	nodo nd;
 	estado st = c_state;
 
-	auto it = plan.begin();
-	while (it != plan.end())
+	while (!copy.empty())
 	{
-		nd.st = apply_seguro(*it, st, mapaResultado);
-		nd.secuencia.push_back(*it);
-		nodos.push_back(nd);
+		nd.st = apply_seguro(copy.front(), st, mapaResultado);
+		nd.secuencia.push(copy.front());
+		nodos.push(nd);
 		st = nd.st;
-		it++;
+		copy.pop();
 	}
 
 	return nodos;
 }
 
-void ComportamientoJugador::VisualizaPlan(const estado &st, const list<Action> &plan)
+void ComportamientoJugador::VisualizaPlan(const estado &st, const queue<Action> &plan)
 {
 	anula_matriz(mapaConPlan);
 	estado cst = st;
+	queue<Action> copy = plan;
 
-	auto it = plan.begin();
-	while (it != plan.end())
+	while (!copy.empty())
 	{
-		if ((*it != act_CLB_WALK) and (*it != act_CLB_TURN_SR) and (*it != act_CLB_STOP))
+		if ((copy.front() != act_CLB_WALK) and (copy.front() != act_CLB_TURN_SR) and (copy.front() != act_CLB_STOP))
 		{
 			switch (cst.ultima_orden_colaborador)
 			{
@@ -620,7 +741,7 @@ void ComportamientoJugador::VisualizaPlan(const estado &st, const list<Action> &
 			}
 		}
 
-		switch (*it)
+		switch (copy.front())
 		{
 		case actRUN:
 			cst.jugador = next_casilla(cst.jugador);
@@ -657,7 +778,7 @@ void ComportamientoJugador::VisualizaPlan(const estado &st, const list<Action> &
 			cst.ultima_orden_colaborador = act_CLB_STOP;
 			break;
 		}
-		it++;
+		copy.pop();
 	}
 	
 }

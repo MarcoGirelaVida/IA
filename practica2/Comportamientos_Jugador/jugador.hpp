@@ -4,7 +4,7 @@
 #include "comportamientos/comportamiento.hpp"
 
 #include <list>
-
+#include <queue>
 
 struct estado
 {
@@ -27,8 +27,11 @@ struct estado
 
 struct nodo
 {
+  size_t coste_acumulado;
   estado st;
-  list<Action> secuencia;
+  queue<Action> secuencia;
+
+  nodo() : coste_acumulado(0) {}
 
   bool operator==(const nodo& otro) const
   {
@@ -37,17 +40,19 @@ struct nodo
 
   bool operator<(const nodo& otro) const
   {
-    if (st.jugador.f < otro.st.jugador.f)
+    if (coste_acumulado < otro.coste_acumulado)
       return true;
-    else if (st.jugador.f == otro.st.jugador.f and st.jugador.c < otro.st.jugador.c)
+    else if (coste_acumulado == otro.coste_acumulado and st.jugador.f < otro.st.jugador.f)
       return true;
-    else if (st.jugador.f == otro.st.jugador.f and st.jugador.c == otro.st.jugador.c and st.jugador.brujula < otro.st.jugador.brujula)
+    else if (coste_acumulado == otro.coste_acumulado and st.jugador.f == otro.st.jugador.f and st.jugador.c < otro.st.jugador.c)
       return true;
-    else if (st.jugador.f == otro.st.jugador.f and st.jugador.c == otro.st.jugador.c and st.jugador.brujula == otro.st.jugador.brujula and st.colaborador.f < otro.st.colaborador.f)
+    else if (coste_acumulado == otro.coste_acumulado and st.jugador.f == otro.st.jugador.f and st.jugador.c == otro.st.jugador.c and st.jugador.brujula < otro.st.jugador.brujula)
       return true;
-    else if (st.jugador.f == otro.st.jugador.f and st.jugador.c == otro.st.jugador.c and st.jugador.brujula == otro.st.jugador.brujula and st.colaborador.f == otro.st.colaborador.f and st.colaborador.c < otro.st.colaborador.c)
+    else if (coste_acumulado == otro.coste_acumulado and st.jugador.f == otro.st.jugador.f and st.jugador.c == otro.st.jugador.c and st.jugador.brujula == otro.st.jugador.brujula and st.colaborador.f < otro.st.colaborador.f)
       return true;
-    else if (st.jugador.f == otro.st.jugador.f and st.jugador.c == otro.st.jugador.c and st.jugador.brujula == otro.st.jugador.brujula and st.colaborador.f == otro.st.colaborador.f and st.colaborador.c == otro.st.colaborador.c and st.colaborador.brujula < otro.st.colaborador.brujula)
+    else if (coste_acumulado == otro.coste_acumulado and st.jugador.f == otro.st.jugador.f and st.jugador.c == otro.st.jugador.c and st.jugador.brujula == otro.st.jugador.brujula and st.colaborador.f == otro.st.colaborador.f and st.colaborador.c < otro.st.colaborador.c)
+      return true;
+    else if (coste_acumulado == otro.coste_acumulado and st.jugador.f == otro.st.jugador.f and st.jugador.c == otro.st.jugador.c and st.jugador.brujula == otro.st.jugador.brujula and st.colaborador.f == otro.st.colaborador.f and st.colaborador.c == otro.st.colaborador.c and st.colaborador.brujula < otro.st.colaborador.brujula)
       return true;
     else
       return false;
@@ -78,19 +83,18 @@ class ComportamientoJugador : public Comportamiento {
   private:
     // Declarar Variables de Estado
     estado c_state;
-    ubicacion goal;
-    list<estado> objetivos;
-    list<Action> plan, plan_colaborador;
+    ubicacion goal, ubicacion_recargador;
+    queue<Action> plan, plan_colaborador;
 
-    bool hayPlan;
+    bool hayPlan, bikini, zapatillas, recargador_encontrado;
 
     ubicacion traductor_posicion(const ubicacion &pos, const int offset_fil, const int offset_col) const;
-    list<Action> traductor_plan_colaborador(const list<Action> &plan) const;
-    void VisualizaPlan(const estado &st, const list<Action> &plan);
-    list<nodo> generar_nodos_secuencia(const list<Action> &plan) const;
+    void VisualizaPlan(const estado &st, const queue<Action> &plan);
+    queue<nodo> generar_nodos_secuencia(const queue<Action> &plan) const;
     //template <typename T>
-    void mostrar_lista(const list<nodo> &l, bool completa = false) const;
-    void PintaPlan(const list<Action> &plan) const;
+    void mostrar_lista(const queue<nodo> &q, bool completa = false) const;
+    void mostrar_lista(const priority_queue<nodo> &q, bool completa = false) const;
+    void PintaPlan(const queue<Action> &plan) const;
     bool es_solucion (const estado &st, const ubicacion &final, bool colaborador = true) const;
     void mostrar_ubicacion(const ubicacion &ub) const;
     void mostrar_estado(const estado &st) const;
@@ -101,16 +105,18 @@ class ComportamientoJugador : public Comportamiento {
     void registrar_estado(const Sensores &sensores, estado &c_state, ubicacion &goal);
     
     // Implementación anchura un solo jugador
+    int coste_casilla(const Action &a, const ubicacion &ub, const vector<vector<unsigned char>> &mapa);
     bool esta_en_rango_vision(const estado &st) const;
     bool casilla_transitable(const estado &cst, const vector<vector<unsigned char>> &mapa, bool colaborador = false) const;
-    bool casilla_transitable(const estado &cst, const vector<vector<unsigned char>> &mapa, const list<estado> &plan) const;
     ubicacion next_casilla(const ubicacion &pos) const;
-    bool Find(const estado &item, const list<estado> &lista) const;
-    bool Find(const estado &item, const list<nodo> &lista) const;
+    bool Find(const estado &item, const queue<estado> &lista) const;
+    bool Find(const estado &item, const queue<nodo> &lista) const;
+    bool actualizar_frontera(const estado &item, priority_queue<nodo> &cola) const;
     estado apply(const Action &a, const estado &st, const vector<vector<unsigned char>> &mapa) const;
     estado apply_seguro(const Action &a, const estado &st, const vector<vector<unsigned char>> &mapa) const;
-    list<Action> nivel_1(const estado &jugador, const ubicacion &destino, const vector<vector<unsigned char>> &mapa);
-    list<Action> buscar_objetivo_anchura(const estado &inicio, const ubicacion &final, const vector<vector<unsigned char>> &mapa, bool colaborador = false);
+    queue<Action> nivel_1(const estado &jugador, const ubicacion &destino, const vector<vector<unsigned char>> &mapa);
+    queue<Action> nivel_2(const estado &jugador, const ubicacion &destino, const vector<vector<unsigned char>> &mapa);
+    queue<Action> buscar_objetivo_anchura(const estado &inicio, const ubicacion &final, const vector<vector<unsigned char>> &mapa, bool colaborador = false);
 
 };
 
