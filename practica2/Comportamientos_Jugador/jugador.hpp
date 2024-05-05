@@ -20,16 +20,12 @@ struct estado
 
   estado() : bikini(false), zapatillas(false), bikini_colab(false), zapatillas_colab(false), ultima_orden_colaborador(act_CLB_STOP) {}
 
+  bool operator!=(const estado& otro) const { return !(*this == otro); }
   bool operator==(const estado& otro) const
   {
     return (jugador == otro.jugador and colaborador == otro.colaborador and bikini == otro.bikini and zapatillas == otro.zapatillas and bikini_colab == otro.bikini_colab and zapatillas_colab == otro.zapatillas_colab and ultima_orden_colaborador == otro.ultima_orden_colaborador);
   }
-
-  bool operator!=(const estado& otro) const
-  {
-    return !(*this == otro);
-  }
-
+  
   bool operator<(const estado& otro) const
   {
     if (jugador.f < otro.jugador.f)
@@ -67,21 +63,9 @@ struct nodo
 
   nodo() : coste(0), coste_con_heuristica(0) {}
 
-  bool operator==(const nodo& otro) const
-  {
-    return (st == otro.st);
-  }
-
-  bool operator<(const nodo& otro) const
-  {
-    return st < otro.st;
-  }
-
-  bool operator>(const nodo& otro) const
-  {
-    return !(*this < otro) and !(*this == otro);
-  }
-
+  bool operator==(const nodo& otro) const { return (st == otro.st); }
+  bool operator<(const nodo& otro) const { return st < otro.st; }
+  bool operator>(const nodo& otro) const { return !(*this < otro) and !(*this == otro); }
   struct mayor_coste
   {
     bool operator()(const nodo& uno, const nodo& otro) const

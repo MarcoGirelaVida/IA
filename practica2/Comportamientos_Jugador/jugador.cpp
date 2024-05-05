@@ -362,15 +362,12 @@ unsigned short ComportamientoJugador::coste_accion_total(const Action a, const e
 unsigned short ComportamientoJugador::coste_accion(const Action a, const estado &st) const
 {
 	ubicacion ub = a == act_CLB_STOP or a == act_CLB_WALK or a == act_CLB_TURN_SR ? st.colaborador : st.jugador;
-	Action accion_colaborador = a;
-
 	if (a == actIDLE or a == act_CLB_STOP) return 0;
-	if (a == actWHEREIS) return 200;
+	else if (a == actWHEREIS) return 200;
 	
 	switch (mapaResultado[ub.f][ub.c])
 	{
-	// Agua
-	case 'A':
+	case 'A': // Agua
 		switch (a)
 		{
 		case actWALK: return st.bikini ? 10 : 100;
@@ -380,8 +377,8 @@ unsigned short ComportamientoJugador::coste_accion(const Action a, const estado 
 		case actTURN_SR: return st.bikini ? 2 : 10;
 		case act_CLB_TURN_SR: return st.bikini_colab ? 2 : 10;
 		}
-	// Bosque
-	case 'B':
+
+	case 'B': // Bosque
 		switch (a)
 		{
 		case actWALK: return st.zapatillas ? 15 : 50;
@@ -391,8 +388,8 @@ unsigned short ComportamientoJugador::coste_accion(const Action a, const estado 
 		case actTURN_SR: return st.zapatillas ? 1 : 5;
 		case act_CLB_TURN_SR: return st.zapatillas_colab ? 1 : 5;
 		}
-	// Arena
-	case 'T':
+
+	case 'T': // Arena
 		switch (a)
 		{
 		case actWALK: return 2;
@@ -403,16 +400,11 @@ unsigned short ComportamientoJugador::coste_accion(const Action a, const estado 
 		case act_CLB_TURN_SR: return 1;
 		}
 
-	// Piedra
-	case 'S': return 1;
-	// Casilla de ubicación
-	case 'G': return 1;
-	// Bikini
-	case 'K': return 1;
-	// Zapatillas
-	case 'D': return 1;
-	// Recarga
-	case 'X': return 1;
+	case 'S': return 1; // Piedra
+	case 'G': return 1; // Casilla de ubicación
+	case 'K': return 1; // Bikini
+	case 'D': return 1; // Zapatillas
+	case 'X': return 1; // Recarga
 	// Muro case 'M': return 0;
 	// Precipicio case 'P': return 0;
 	// Desconocida case '?': return 1;
@@ -422,7 +414,6 @@ unsigned short ComportamientoJugador::coste_accion(const Action a, const estado 
 		cerr << "Casilla introducida: " << mapaResultado[ub.f][ub.c] << endl;
 		exit(1);
 	}
-	
 }
 
 // ----------------- FUNCIONES DE LA AUXILIARES -----------------
@@ -451,62 +442,31 @@ estado ComportamientoJugador::apply(const Action &a, const estado &st) const
 {
 	estado st_result, st_sig, st_sig2;
 	st_result = st_sig = st_sig2 = st;
-
-	if (a == act_CLB_WALK)
-		st_sig.colaborador = next_casilla(st.colaborador);
-	else
-	{
-		st_sig.jugador = next_casilla(st.jugador);
-		st_sig2.jugador = next_casilla(st_sig.jugador);
-	}
+	if (a == act_CLB_WALK) 	  st_sig.colaborador = next_casilla(st.colaborador);
+	else 					{ st_sig.jugador = next_casilla(st.jugador); st_sig2.jugador = next_casilla(st_sig.jugador); }
 
 	switch (a)
 	{
-	case actWALK:
-		if (casilla_transitable(st_sig, false))
-			st_result = st_sig;
-		break;
-	
-	case act_CLB_WALK:
-		if (casilla_transitable(st_sig, true))
-		{
-			st_result = st_sig;
-			st_result.ultima_orden_colaborador = act_CLB_WALK;
-		}
-		break;
+	// ----------------- JUGADOR -----------------
+	case actWALK: if (casilla_transitable(st_sig, false)) st_result = st_sig; break;
+	case actRUN: if (casilla_transitable(st_sig, false) && casilla_transitable(st_sig2, false)) st_result = st_sig2; break;
+	case actTURN_L: st_result.jugador.brujula = static_cast<Orientacion>((st_result.jugador.brujula+6)%8); break;
+	case actTURN_SR: st_result.jugador.brujula = static_cast<Orientacion>((st_result.jugador.brujula+1)%8); break;
+	case actIDLE: break;
 
-	case actRUN:
-		if (casilla_transitable(st_sig, false) && casilla_transitable(st_sig2, false))
-			st_result = st_sig2;
-		break;
-
-	case actTURN_L:
-		st_result.jugador.brujula = static_cast<Orientacion>((st_result.jugador.brujula+6)%8);
-		break;
-
-	case actTURN_SR:
-		st_result.jugador.brujula = static_cast<Orientacion>((st_result.jugador.brujula+1)%8);
-		break;
-
+	// ----------------- COLABORADOR -----------------
+	case act_CLB_STOP: st_result.ultima_orden_colaborador = act_CLB_STOP; break;
+	case act_CLB_WALK: if (casilla_transitable(st_sig, true)) { st_result = st_sig; st_result.ultima_orden_colaborador = act_CLB_WALK; } break;
 	case act_CLB_TURN_SR:
 		st_result.colaborador.brujula = static_cast<Orientacion>((st_result.colaborador.brujula+1)%8);
 		st_result.ultima_orden_colaborador = act_CLB_TURN_SR;
 		break;
 
-	case act_CLB_STOP:
-		st_result.ultima_orden_colaborador = act_CLB_STOP;
-		break;
-
-	case actIDLE: break;
-
 	default:
 		cerr << "ERROR EN LA APLICACIÓN DE LA ACCIÓN" << endl;
-		cerr << "Acción introducida: ";
-		accion_string(a);
-		cerr << endl;
+		cerr << "Acción introducida: "; accion_string(a); cerr << endl;
 		exit(1);
 	}
-
 	return st_result;
 }
 
