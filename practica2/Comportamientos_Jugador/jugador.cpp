@@ -483,15 +483,13 @@ unsigned short ComportamientoJugador::distancia_chebyshev(const estado &st, cons
 
 void ComportamientoJugador::generar_hijo(const Action a, const nodo &padre, nodo &hijo, const unsigned char nivel, const ubicacion &final) const
 {
-	hijo.secuencia = padre.secuencia;
 	hijo.st = apply_seguro(a, padre.st);
+	hijo.secuencia = padre.secuencia;
 	hijo.secuencia.push(a);
 
 	if (nivel > 1)
 	{
 		hijo.coste_con_heuristica = hijo.coste = padre.coste + coste_accion_total(a, padre.st);
-		if (nivel == 3)
-			hijo.coste_con_heuristica += distancia_chebyshev(padre.st, final);
 		
 		hijo.st.bikini = padre.st.bikini;
 		hijo.st.zapatillas = padre.st.zapatillas;
@@ -508,6 +506,7 @@ void ComportamientoJugador::generar_hijo(const Action a, const nodo &padre, nodo
 
 		if (nivel > 2)
 		{	
+			hijo.coste_con_heuristica += distancia_chebyshev(padre.st, final);
 			hijo.st.bikini_colab = padre.st.bikini_colab;
 			hijo.st.zapatillas_colab = padre.st.zapatillas_colab;
 			if (mapaResultado[hijo.st.colaborador.f][hijo.st.colaborador.c] == 'K')
