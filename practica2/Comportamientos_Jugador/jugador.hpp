@@ -9,8 +9,8 @@
 #include <cmath>
 #include <list>
 
-static const vector<Action> acciones_jugador = {actIDLE, actWALK, actRUN, actTURN_SR, actTURN_L};
-static const vector<Action> acciones_jugador_colaborador = {actIDLE, actWALK, actRUN, actTURN_SR, actTURN_L, act_CLB_WALK, act_CLB_TURN_SR, act_CLB_STOP};
+static const vector<Action> acciones_jugador = {actWALK, actRUN, actTURN_L, actTURN_SR, actIDLE};
+static const vector<Action> acciones_jugador_colaborador = {actWALK, actRUN, actTURN_L, actTURN_SR, act_CLB_WALK, act_CLB_TURN_SR, act_CLB_STOP, actIDLE};
 
 struct estado
 {
@@ -116,12 +116,12 @@ class ComportamientoJugador : public Comportamiento {
     void mostrar_ubicacion(const ubicacion &ub) const;
     void mostrar_estado(const estado &st, const unsigned char nivel) const;
     void mostrar_nodo(const nodo &nd, const unsigned char nivel, bool mostrar_secuencia = false) const;
-    void PintaPlan(const queue<Action> &plan) const;
     void accion_string (const Action &a) const;
     void orientacion_string (const Orientacion &o) const;
-    queue<nodo> generar_nodos_secuencia(const queue<Action> &plan, const estado &inicio);
     void anula_matriz(vector<vector<unsigned char>> & matriz);
+    void PintaPlan(const queue<Action> &plan) const;
     void VisualizaPlan(const estado &st, const queue<Action> &plan);
+    queue<nodo> generar_nodos_secuencia(const queue<Action> &plan, const estado &inicio);
     
 // ----------------- FUNCIONES MAIN ----------------------------
 
@@ -130,26 +130,26 @@ class ComportamientoJugador : public Comportamiento {
 
 // ----------------- FUNCIONES DE LA CONSULTA ------------------ 
 
+    ubicacion next_casilla(const ubicacion &pos) const;
     ubicacion traductor_posicion(const ubicacion &pos, const int offset_fil, const int offset_col) const;
     bool es_solucion (const estado &st, const ubicacion &final, const unsigned char nivel) const;
-    unsigned short coste_accion_total(const Action a, const estado &st, const vector<vector<unsigned char> > &mapa) const;
-    unsigned short coste_accion(const Action a, const estado &st, const vector<vector<unsigned char>> &mapa) const;
     bool esta_en_rango_vision(const estado &st) const;
-    bool casilla_transitable(const estado &cst, const vector<vector<unsigned char>> &mapa, bool colaborador) const;
+    bool casilla_transitable(const estado &cst, bool colaborador) const;
+    unsigned short coste_accion_total(const Action a, const estado &st) const;
+    unsigned short coste_accion(const Action a, const estado &st) const;
 
 // ----------------- FUNCIONES DE LA AUXILIARES ---------------- 
 
+    estado apply_seguro(const Action &a, const estado &st) const;
+    estado apply(const Action &a, const estado &st) const;
     unsigned short distancia_manhattan(const estado &st, const ubicacion &final) const;
     unsigned short distancia_chebyshev(const estado &st, const ubicacion &final) const;
-    void generar_hijo(const nodo &padre, const Action a, nodo &hijo, const vector<vector<unsigned char>> &mapa, const unsigned char nivel, const ubicacion &final = {0, 0}) const;
-    ubicacion next_casilla(const ubicacion &pos) const;
-    estado apply_seguro(const Action &a, const estado &st, const vector<vector<unsigned char>> &mapa) const;
-    estado apply(const Action &a, const estado &st, const vector<vector<unsigned char>> &mapa) const;
+    void generar_hijo(const Action a, const nodo &padre, nodo &hijo, const unsigned char nivel, const ubicacion &final = {0, 0}) const;
 
 // ----------------- FUNCIONES DE LA BÚSQUEDA ------------------ 
 
-    queue<Action> nivel_2_3(const estado &jugador, const ubicacion &destino, const vector<vector<unsigned char>> &mapa, const unsigned char nivel);
-    queue<Action> nivel_0_1(const estado &inicio, const ubicacion &final, const vector<vector<unsigned char>> &mapa, const unsigned char nivel);
+    queue<Action> nivel_2_3(const estado &jugador, const ubicacion &destino, const unsigned char nivel);
+    queue<Action> nivel_0_1(const estado &inicio, const ubicacion &final, const unsigned char nivel);
 
 // ----------------- EL INTERACT ----------------- 
 
