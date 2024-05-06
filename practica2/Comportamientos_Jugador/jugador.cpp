@@ -1,6 +1,5 @@
 #include "../Comportamientos_Jugador/jugador.hpp"
 #include "motorlib/util.h"
-
 // ----------------- FUNCIONES DE LA DEBUGGING -----------------
 
 void ComportamientoJugador::orientacion_string (const Orientacion &o) const
@@ -193,7 +192,7 @@ queue<nodo> ComportamientoJugador::generar_nodos_secuencia(const queue<Action> &
 	padre.st = inicio;
 	while (!copy.empty())
 	{
-		generar_hijo(copy.front(), padre, hijo, 3);
+		hijo = generar_nodo(copy.front(), padre, 3);
 		nodos.push(hijo);
 		consumo_total_bateria += coste_accion_total(copy.front(), padre.st);
 		padre = hijo;
@@ -204,39 +203,118 @@ queue<nodo> ComportamientoJugador::generar_nodos_secuencia(const queue<Action> &
 
 // ----------------- FUNCIONES MAIN -----------------
 
-void ComportamientoJugador::registrar_estado(const Sensores &sensores, estado &c_state, ubicacion &goal)
+void ComportamientoJugador::poner_bordes_en_matriz()
 {
-	c_state.jugador.f = sensores.posF;
-	c_state.jugador.c = sensores.posC;
-	c_state.jugador.brujula = sensores.sentido;
-	c_state.colaborador.f = sensores.CLBposF;
-	c_state.colaborador.c = sensores.CLBposC;
-	c_state.colaborador.brujula = sensores.CLBsentido;
-	goal.f = sensores.destinoF;
-	goal.c = sensores.destinoC;
+	// Borde superior
+	for (size_t i = 0; i < 3; i++)
+		for (size_t j = 0; j < mapaResultado.size(); j++)
+			mapaResultado[i][j] = 'P';
+	// Borde inferior
+	for (size_t i = mapaResultado.size() - 3; i < mapaResultado.size(); i++)
+		for (size_t j = 0; j < mapaResultado.size(); j++)
+			mapaResultado[i][j] = 'P';
+	// Borde izquierdo
+	for (size_t i = 0; i < mapaResultado.size(); i++)
+		for (size_t j = 0; j < 3; j++)
+			mapaResultado[i][j] = 'P';
+	// Borde derecho
+	for (size_t i = 0; i < mapaResultado.size(); i++)
+		for (size_t j = mapaResultado.size() - 3; j < mapaResultado.size(); j++)
+			mapaResultado[i][j] = 'P';
+}
+void ComportamientoJugador::registrar_sensores(Sensores sensor)
+{
+	const vector<pair<short, short>> pos_norte = { {0, 0}, {-1, -1}, {-1, 0}, {-1, 1}, {-2, -2}, {-2, -1}, {-2, 0}, {-2, 1}, {-2, 2}, {-3, -3}, {-3, -2}, {-3, -1}, {-3, 0}, {-3, 1}, {-3, 2}, {-3, 3} };
+	const vector<pair<short, short>> pos_noreste = { {0, 0}, {-1, 0}, {-1, 1}, {0, 1}, {-2, 0}, {-2, 1}, {-2, 2}, {-1, 2}, {0, 2}, {-3, 0}, {-3, 1}, {-3, 2}, {-3, 3}, {-2, 3}, {-1, 3}, {0, 3} };
+	vector<pair<short, short>> vector_pos = pos_norte;
+
+	switch (c_state.jugador.brujula)
+	{
+	case noreste: 	vector_pos = pos_noreste; 	break;
+	case noroeste: 	vector_pos = pos_noreste; 	break;
+	case sureste: 	vector_pos = pos_noreste;	break;
+	case suroeste: 	vector_pos = pos_noreste;	break;
+	}
+
+	for (size_t i = 0; i < 16; i++)
+	 {
+		if (sensor.terreno[i] != '?'){
+			ubicacion ub = traductor_posicion(c_state.jugador, vector_pos[i].first, vector_pos[i].second);
+			mapaResultado[ub.f][ub.c] = sensor.terreno[i];
+			//if (sensor.agentes[i] != '_' && sensor.agentes[i] != 'j')
+			//	casillas_agentes.insert(make_pair(ub, sensor.agentes[i]));
+		}
+	 }
+}
+void ComportamientoJugador::reset()
+{
+	hayPlan = false;
+	ubicado = false;
+	recargador_encontrado = false;
+	c_state.jugador.f = -1;
+	c_state.jugador.f = -1;
+	c_state.jugador.brujula = norte;
+	c_state.bikini = false;
+	c_state.zapatillas = false;
+
+	c_state.colaborador.f = -1;
+	c_state.colaborador.c = -1;
+	c_state.colaborador.brujula = norte;
+	c_state.bikini_colab = false;
+	c_state.zapatillas_colab = false;
+}
+void ComportamientoJugador::registrar_estado(const Sensores &sensores, const Action a)
+{
+/*---------------------------------------------------------------------------------------------*/
+	// Si me ubico
+	if (sensores.posF != -1 and !ubicado)
+	{
+		ubicado = true;
+		c_state.jugador.f = sensores.posF;
+		c_state.jugador.c = sensores.posC;
+		c_state.jugador.brujula = sensores.sentido;
+		c_state.colaborador.f = sensores.CLBposF;
+		c_state.colaborador.c = sensores.CLBposC;
+		c_state.colaborador.brujula = sensores.CLBsentido;
+		goal.f = sensores.destinoF;
+		goal.c = sensores.destinoC;
+	}
+	else if (ubicado)
+		c_state = generar_estado(a, c_state, sensores.nivel);
+
+/*---------------------------------------------------------------------------------------------*/
+	// Reviso batería y decido si necesito recargar o seguir recargando
+	sensores.bateria;
+	prioridad_recarga = (5 - ((sensores.bateria / 3000) * 5)) && ciclos_desde_ultima_recarga >= 250 && sensores.vida >= 250;
+
+	// Si estoy en una casilla de recarga, descuento la batería
+	if (sensores.terreno[0] == 'X')
+		if (!(recargando = prioridad_recarga))
+			ciclos_desde_ultima_recarga = 0;
+/*---------------------------------------------------------------------------------------------*/
+
+	registrar_sensores(sensores);
 }
 Action ComportamientoJugador::think(Sensores sensores)
 {
 	Action accion = actIDLE;
+	registrar_estado(sensores, ultima_accion);
+
+	if(!ubicado) return actWHEREIS;
+	if (recargando) { ciclos_desde_ultima_recarga++; return actIDLE;}
 	if (!hayPlan)
 	{
-		registrar_estado(sensores, c_state, goal);
-		if (sensores.nivel == 0)
-			plan = nivel_0_1(c_state, goal, 0);
-		else if (sensores.nivel == 1)
-			plan = nivel_0_1(c_state, goal, 1);
-		else if (sensores.nivel == 2)
-			plan = nivel_2_3(c_state, goal, 2);
-		else if (sensores.nivel == 3)
-			plan = nivel_2_3(c_state, goal, 3);
-		//else
-		//	plan = nivel_4(c_state, goal, , 3);
-
-		if (plan.empty())
+			
+		switch (sensores.nivel)
 		{
-			cerr << "ERROR: No se ha encontrado un plan" << endl;
-			exit(1);
+		case 0: plan = nivel_0_1(c_state, goal, 0); break;
+		case 1: plan = nivel_0_1(c_state, goal, 1); break;
+		case 2: plan = nivel_2_3_4(c_state, goal, 2); break;
+		case 3: plan = nivel_2_3_4(c_state, goal, 3); break;
+		//case 4: plan = nivel_2_3_4(c_state, objetivos.top().first, 3); break;
 		}
+
+		if (plan.empty()) { cerr << "ERROR: No se ha encontrado un plan" << endl; exit(1); }
 		else
 		{
 			//cout << "--------PLAN ENCONTRADO--------" << endl;
@@ -280,6 +358,7 @@ Action ComportamientoJugador::think(Sensores sensores)
 	else
 		hayPlan = false;
 
+	ultima_accion = accion;
 	return accion;
 }
 
@@ -319,17 +398,13 @@ bool ComportamientoJugador::esta_en_rango_vision(const estado &st) const
 {
 	const vector<pair<short, short>> pos_norte = { {0, 0}, {-1, -1}, {-1, 0}, {-1, 1}, {-2, -2}, {-2, -1}, {-2, 0}, {-2, 1}, {-2, 2}, {-3, -3}, {-3, -2}, {-3, -1}, {-3, 0}, {-3, 1}, {-3, 2}, {-3, 3} };
 	const vector<pair<short, short>> pos_noreste = { {0, 0}, {-1, 0}, {-1, 1}, {0, 1}, {-2, 0}, {-2, 1}, {-2, 2}, {-1, 2}, {0, 2}, {-3, 0}, {-3, 1}, {-3, 2}, {-3, 3}, {-2, 3}, {-1, 3}, {0, 3} };
-	vector<pair<short, short>> vector_pos = pos_noreste;
+	vector<pair<short, short>> vector_pos = pos_norte;
 
 	switch (st.jugador.brujula)
 	{
-	case norte: 	vector_pos = pos_norte; 	break;
 	case noreste: 	vector_pos = pos_noreste; 	break;
-	case oeste: 	vector_pos = pos_norte;		break;
 	case noroeste: 	vector_pos = pos_noreste; 	break;
-	case este: 		vector_pos = pos_norte;		break;
 	case sureste: 	vector_pos = pos_noreste;	break;
-	case sur: 		vector_pos = pos_norte;		break;
 	case suroeste: 	vector_pos = pos_noreste;	break;
 	}
 
@@ -405,12 +480,12 @@ unsigned short ComportamientoJugador::coste_accion(const Action a, const estado 
 	case 'K': return 1; // Bikini
 	case 'D': return 1; // Zapatillas
 	case 'X': return 1; // Recarga
+	case '?': return 1; //Desconocida
 	// Muro case 'M': return 0;
 	// Precipicio case 'P': return 0;
-	// Desconocida case '?': return 1;
 	// Jugador case 'a': return 0;
 	default:
-		cerr << "ERROR EN ASIGNACION DE COSTE DE CASILLA" << endl;
+		cerr << "ERROR EN COSTE ACCION" << endl;
 		cerr << "Casilla introducida: " << mapaResultado[ub.f][ub.c] << endl;
 		exit(1);
 	}
@@ -418,48 +493,28 @@ unsigned short ComportamientoJugador::coste_accion(const Action a, const estado 
 
 // ----------------- FUNCIONES DE LA AUXILIARES -----------------
 
-estado ComportamientoJugador::apply_seguro(const Action &a, const estado &st) const
-{
-	estado st_tras_ultima_accion, st_result = st;
-	if (a == act_CLB_STOP or a == act_CLB_TURN_SR or a == act_CLB_WALK)
-	{
-		if(esta_en_rango_vision(st))
-			st_result = apply(a, st);
-	}
-	else 
-	{
-		st_tras_ultima_accion = apply(a, st);
-		if (st_tras_ultima_accion != st or a == actIDLE)
-		{
-			st_result = apply(st_result.ultima_orden_colaborador, st_tras_ultima_accion);
-			if (st_result == st_tras_ultima_accion and st.ultima_orden_colaborador != act_CLB_STOP)
-				st_result = st;
-		}
-	}
-	return st_result;
-}
 estado ComportamientoJugador::apply(const Action &a, const estado &st) const
 {
-	estado st_result, st_sig, st_sig2;
-	st_result = st_sig = st_sig2 = st;
+	estado salida, st_sig, st_sig2;
+	salida = st_sig = st_sig2 = st;
 	if (a == act_CLB_WALK) 	  st_sig.colaborador = next_casilla(st.colaborador);
 	else 					{ st_sig.jugador = next_casilla(st.jugador); st_sig2.jugador = next_casilla(st_sig.jugador); }
 
 	switch (a)
 	{
 	// ----------------- JUGADOR -----------------
-	case actWALK: if (casilla_transitable(st_sig, false)) st_result = st_sig; break;
-	case actRUN: if (casilla_transitable(st_sig, false) && casilla_transitable(st_sig2, false)) st_result = st_sig2; break;
-	case actTURN_L: st_result.jugador.brujula = static_cast<Orientacion>((st_result.jugador.brujula+6)%8); break;
-	case actTURN_SR: st_result.jugador.brujula = static_cast<Orientacion>((st_result.jugador.brujula+1)%8); break;
+	case actWALK: if (casilla_transitable(st_sig, false)) salida = st_sig; break;
+	case actRUN: if (casilla_transitable(st_sig, false) && casilla_transitable(st_sig2, false)) salida = st_sig2; break;
+	case actTURN_L: salida.jugador.brujula = static_cast<Orientacion>((salida.jugador.brujula+6)%8); break;
+	case actTURN_SR: salida.jugador.brujula = static_cast<Orientacion>((salida.jugador.brujula+1)%8); break;
 	case actIDLE: break;
 
 	// ----------------- COLABORADOR -----------------
-	case act_CLB_STOP: st_result.ultima_orden_colaborador = act_CLB_STOP; break;
-	case act_CLB_WALK: if (casilla_transitable(st_sig, true)) { st_result = st_sig; st_result.ultima_orden_colaborador = act_CLB_WALK; } break;
+	case act_CLB_STOP: salida.ultima_orden_colaborador = act_CLB_STOP; break;
+	case act_CLB_WALK: if (casilla_transitable(st_sig, true)) { salida = st_sig; salida.ultima_orden_colaborador = act_CLB_WALK; } break;
 	case act_CLB_TURN_SR:
-		st_result.colaborador.brujula = static_cast<Orientacion>((st_result.colaborador.brujula+1)%8);
-		st_result.ultima_orden_colaborador = act_CLB_TURN_SR;
+		salida.colaborador.brujula = static_cast<Orientacion>((salida.colaborador.brujula+1)%8);
+		salida.ultima_orden_colaborador = act_CLB_TURN_SR;
 		break;
 
 	default:
@@ -467,69 +522,82 @@ estado ComportamientoJugador::apply(const Action &a, const estado &st) const
 		cerr << "Acción introducida: "; accion_string(a); cerr << endl;
 		exit(1);
 	}
-	return st_result;
+	return salida;
 }
 
-unsigned short ComportamientoJugador::distancia_manhattan(const estado &st, const ubicacion &final) const
+unsigned short ComportamientoJugador::distancia_manhattan(const ubicacion &ub, const ubicacion &final) const
 {
 	//return esta_en_rango_vision(st) ? abs(final.f-st.colaborador.f) + abs(final.f-st.colaborador.c) : abs(st.colaborador.f-st.jugador.f) + abs(st.colaborador.c-st.jugador.c);
-	return abs(final.f-st.colaborador.f) + abs(final.f-st.colaborador.c);
+	return abs(final.f-ub.f) + abs(final.f-ub.c);
 }
-unsigned short ComportamientoJugador::distancia_chebyshev(const estado &st, const ubicacion &final) const
+unsigned short ComportamientoJugador::distancia_chebyshev(const ubicacion &ub, const ubicacion &final) const
 {
 	//return esta_en_rango_vision(st) ? max(abs(final.f - st.colaborador.f), abs(final.c - st.colaborador.c)) : max(abs(st.colaborador.f - st.jugador.f), abs(st.colaborador.c - st.jugador.c));
-	return max(abs(st.colaborador.f - final.f), abs(st.colaborador.c - final.c));
+	return max(abs(ub.f - final.f), abs(ub.c - final.c));
 }
 
-void ComportamientoJugador::generar_hijo(const Action a, const nodo &padre, nodo &hijo, const unsigned char nivel, const ubicacion &final) const
+estado ComportamientoJugador::generar_estado(const Action a, const estado &st, const unsigned char nivel) const
 {
-	hijo.st = apply_seguro(a, padre.st);
+	estado st_accion_jugador, salida = st;
+	if ((a == act_CLB_STOP or a == act_CLB_TURN_SR or a == act_CLB_WALK))
+	{
+		if (esta_en_rango_vision(st))
+			salida = apply(a, st);
+	}
+	else 
+	{
+		st_accion_jugador = apply(a, st);
+		if (st_accion_jugador != st or a == actIDLE)
+		{
+			salida = apply(salida.ultima_orden_colaborador, st_accion_jugador);
+			if (salida == st_accion_jugador and st.ultima_orden_colaborador != act_CLB_STOP)
+				salida = st;
+		}
+	}
+	if (nivel < 2) return salida;
+
+	salida.bikini = st.bikini;
+	salida.zapatillas = st.zapatillas;
+	if (mapaResultado[salida.jugador.f][salida.jugador.c] == 'K')
+	{ salida.bikini = true; salida.zapatillas = false; }
+	else if (mapaResultado[salida.jugador.f][salida.jugador.c] == 'D')
+	{ salida.zapatillas = true; salida.bikini = false; }
+
+	if (nivel < 3) return salida;
+
+	salida.bikini_colab = st.bikini_colab;
+	salida.zapatillas_colab = st.zapatillas_colab;
+	if (mapaResultado[salida.colaborador.f][salida.colaborador.c] == 'K')
+	{ salida.bikini_colab = true; salida.zapatillas_colab = false; }
+	else if (mapaResultado[salida.colaborador.f][salida.colaborador.c] == 'D')
+	{ salida.zapatillas_colab = true; salida.bikini_colab = false; }
+
+	return salida;
+}
+nodo ComportamientoJugador::generar_nodo(const Action a, const nodo &padre, const unsigned char nivel, const ubicacion &final) const
+{
+	nodo hijo;
+	hijo.st = generar_estado(a, padre.st, nivel);
 	hijo.secuencia = padre.secuencia;
 	hijo.secuencia.push(a);
 
-	if (nivel > 1)
-	{
-		hijo.coste_con_heuristica = hijo.coste = padre.coste + coste_accion_total(a, padre.st);
-		
-		hijo.st.bikini = padre.st.bikini;
-		hijo.st.zapatillas = padre.st.zapatillas;
-		if (mapaResultado[hijo.st.jugador.f][hijo.st.jugador.c] == 'K')
-		{
-			hijo.st.bikini = true;
-			hijo.st.zapatillas = false;
-		}
-		else if (mapaResultado[hijo.st.jugador.f][hijo.st.jugador.c] == 'D')
-		{
-			hijo.st.zapatillas = true;
-			hijo.st.bikini = false;
-		}
+	if (nivel < 2) return hijo;
+	hijo.coste_con_heuristica = hijo.coste = padre.coste + coste_accion_total(a, padre.st);
 
-		if (nivel > 2)
-		{	
-			hijo.coste_con_heuristica += distancia_chebyshev(padre.st, final);
-			hijo.st.bikini_colab = padre.st.bikini_colab;
-			hijo.st.zapatillas_colab = padre.st.zapatillas_colab;
-			if (mapaResultado[hijo.st.colaborador.f][hijo.st.colaborador.c] == 'K')
-			{
-				hijo.st.bikini_colab = true;
-				hijo.st.zapatillas_colab = false;
-			}
-			else if (mapaResultado[hijo.st.colaborador.f][hijo.st.colaborador.c] == 'D')
-			{
-				hijo.st.zapatillas_colab = true;
-				hijo.st.bikini_colab = false;
-			}
-		}
-	}
+	if (nivel < 3) return hijo;
+	hijo.coste_con_heuristica += nivel == 3 ? distancia_chebyshev(padre.st.colaborador, final) : 0;
+
+	return hijo;
 }
 
 // ----------------- FUNCIONES DE LA BÚSQUEDA -----------------
 
-queue<Action> ComportamientoJugador::nivel_2_3(const estado &inicio, const ubicacion &final, const unsigned char nivel)
+queue<Action> ComportamientoJugador::nivel_2_3_4(const estado &inicio, const ubicacion &final, const unsigned char nivel)
 {
-	const vector<Action> acciones = nivel == 2 ? acciones_jugador : acciones_jugador_colaborador;
+	const vector<Action> acciones = nivel == 2 or nivel == 4 ? acciones_jugador : acciones_jugador_colaborador;
 	priority_queue<nodo, vector<nodo>, nodo::mayor_coste> frontier;
-	set<estado> explorados;
+	unordered_set<estado, estado_hash> explorados;
+	//set<estado> explorados;
 	queue<Action> plan;
 	nodo current_node, child;
 	current_node.st = inicio;
@@ -551,7 +619,7 @@ queue<Action> ComportamientoJugador::nivel_2_3(const estado &inicio, const ubica
 		}
 		for (const auto &action : acciones)
 		{
-			generar_hijo(action, current_node, child, nivel, final);
+			child = generar_nodo(action, current_node, nivel, final);
 			if (explorados.find(child.st) == explorados.end())
 				frontier.push(child);
 		}
@@ -573,7 +641,8 @@ queue<Action> ComportamientoJugador::nivel_0_1(const estado &inicio, const ubica
 {
 	const vector<Action> acciones = nivel == 0 ? acciones_jugador : acciones_jugador_colaborador;
 	queue<nodo> frontier;
-	set<estado> explorados;
+	unordered_set<estado, estado_hash> explorados;
+	//set<estado> explorados;
 	queue<Action> plan;
 	nodo current_node, child;
 	current_node.st = inicio;
@@ -588,7 +657,7 @@ queue<Action> ComportamientoJugador::nivel_0_1(const estado &inicio, const ubica
 
 		for (const auto& action : acciones)
 		{
-			generar_hijo(action, current_node, child, nivel);
+			child = generar_nodo(action, current_node, nivel);
 			if ((solution_found = es_solucion(child.st, final, nivel)))
 			{
 				//nodos_abiertos = frontier.size();
