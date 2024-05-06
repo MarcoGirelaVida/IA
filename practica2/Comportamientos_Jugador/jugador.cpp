@@ -51,16 +51,16 @@ void ComportamientoJugador::mostrar_lista(const queue<nodo> &q, bool completa) c
 		}
 		else
 		{
-			cerr << "{"; PintaPlan((copy.front()).secuencia); cerr << "}, ";
+			cerr << "{"; PintaPlan((copy.front()).secuencia()); cerr << "}, ";
 		}
 		copy.pop();
 		num_paso++;
 	}
 }
-void ComportamientoJugador::mostrar_lista(const priority_queue<nodo, vector<nodo>, greater<nodo>> &q, bool completa) const
+void ComportamientoJugador::mostrar_lista(const priority_queue<nodo, vector<nodo>, nodo::mayor_coste> &q, bool completa) const
 {
 	size_t num_paso = 1;
-	priority_queue<nodo, vector<nodo>, greater<nodo>> copy = q;
+	priority_queue<nodo, vector<nodo>, nodo::mayor_coste> copy = q;
 	while (!copy.empty())
 	{
 		if (completa)
@@ -71,7 +71,7 @@ void ComportamientoJugador::mostrar_lista(const priority_queue<nodo, vector<nodo
 		}
 		else
 		{
-			cerr << "{"; PintaPlan((copy.top()).secuencia); cerr << "}, ";
+			cerr << "{"; PintaPlan((copy.top()).secuencia()); cerr << "}, ";
 		}
 		copy.pop();
 		num_paso++;
@@ -95,9 +95,10 @@ void ComportamientoJugador::mostrar_estado(const estado &st, const unsigned char
 void ComportamientoJugador::mostrar_nodo(const nodo &nd, const unsigned char nivel, bool mostrar_secuencia) const
 {
 	mostrar_estado(nd.st, nivel);
+	cerr << "¿PADRE NULLPTR?: " << boolalpha << (nd.p_nodo_accion->padre == nullptr) << endl; 
 	if (nivel > 1) 			{ cerr << "Coste acumulado: " << 3000 - nd.coste << endl; }
-	if (mostrar_secuencia) 	{ cerr << endl << "Secuencia: "; PintaPlan(nd.secuencia); }
-	else 					{ cerr << endl << "Accion: "; if(!nd.secuencia.empty()) accion_string(nd.secuencia.back()); cerr << endl; }
+	if (mostrar_secuencia) 	{ cerr << endl << "Secuencia: "; PintaPlan(nd.secuencia()); }
+	else 					{ cerr << endl << "Accion: "; accion_string(nd.p_nodo_accion->accion); cerr << endl; }
 	cerr << endl;
 }
 
@@ -578,8 +579,9 @@ nodo ComportamientoJugador::generar_nodo(const Action a, const nodo &padre, cons
 {
 	nodo hijo;
 	hijo.st = generar_estado(a, padre.st, nivel);
-	hijo.secuencia = padre.secuencia;
-	hijo.secuencia.push(a);
+	hijo.p_nodo_accion = new nodo_accion(a, padre.p_nodo_accion);
+	//hijo.secuencia = padre.secuencia;
+	//hijo.secuencia.push(a);
 
 	if (nivel < 2) return hijo;
 	hijo.coste_con_heuristica = hijo.coste = padre.coste + coste_accion_total(a, padre.st);
@@ -588,6 +590,31 @@ nodo ComportamientoJugador::generar_nodo(const Action a, const nodo &padre, cons
 	hijo.coste_con_heuristica += nivel == 3 ? distancia_chebyshev(padre.st.colaborador, final) : 0;
 
 	return hijo;
+}
+
+void ComportamientoJugador::liberar_memoria_grafo(queue<nodo> &frontier) const
+{
+	while (!frontier.empty())
+	{
+		cerr << "Liberando memoria" << endl;
+		liberar_memoria_nodo(frontier.front().p_nodo_accion);
+		frontier.pop();
+	}
+}
+void ComportamientoJugador::liberar_memoria_grafo(priority_queue<nodo, vector<nodo>, nodo::mayor_coste> &frontier) const
+{
+	while (!frontier.empty())
+	{
+
+		liberar_memoria_nodo(frontier.top().p_nodo_accion);
+		frontier.pop();
+	}
+}
+void ComportamientoJugador::liberar_memoria_nodo(const nodo_accion *nodo) const
+{
+	if (nodo->padre != nullptr)
+		liberar_memoria_nodo(nodo->padre);
+	delete nodo;
 }
 
 // ----------------- FUNCIONES DE LA BÚSQUEDA -----------------
@@ -601,24 +628,27 @@ queue<Action> ComportamientoJugador::nivel_2_3_4(const estado &inicio, const ubi
 	queue<Action> plan;
 	nodo current_node, child;
 	current_node.st = inicio;
+	current_node.p_nodo_accion = new nodo_accion();
 	frontier.push(current_node);
 	bool solution_found = es_solucion(current_node.st, final, nivel);
 
 	while (!frontier.empty() and !solution_found)
 	{
-		//hijos_explorados++;
+		//cerr << "EXPLORANDO NODO: " << endl; mostrar_nodo(frontier.top(), nivel);
+		hijos_explorados++;
 		frontier.pop();
 		explorados.insert(current_node.st);
-
 		if ((solution_found = es_solucion(current_node.st, final, nivel)))
-		{	
+		{
 			//nodos_abiertos = frontier.size();
 			//nodos_cerrados = explorados.size();
-			plan = current_node.secuencia;
+			plan = current_node.secuencia();
+			liberar_memoria_nodo(current_node.p_nodo_accion);
 			break;
 		}
 		for (const auto &action : acciones)
 		{
+			//cerr << "Estoy generando un hijo" << endl;
 			child = generar_nodo(action, current_node, nivel, final);
 			if (explorados.find(child.st) == explorados.end())
 				frontier.push(child);
@@ -634,7 +664,10 @@ queue<Action> ComportamientoJugador::nivel_2_3_4(const estado &inicio, const ubi
 					current_node = frontier.top();
 			}
 		}
+		//cerr << "TAMAÑO FRONTERA: " << frontier.size() << endl << endl;
+		//cerr << "FRONTIER: " << endl; mostrar_lista(frontier, false); cerr << endl << endl;
 	}
+
 	return plan;
 }
 queue<Action> ComportamientoJugador::nivel_0_1(const estado &inicio, const ubicacion &final, const unsigned char nivel)
@@ -646,6 +679,7 @@ queue<Action> ComportamientoJugador::nivel_0_1(const estado &inicio, const ubica
 	queue<Action> plan;
 	nodo current_node, child;
 	current_node.st = inicio;
+	current_node.p_nodo_accion = new nodo_accion();
 	frontier.push(current_node);
 	bool solution_found = es_solucion(current_node.st, final, nivel);
 
@@ -662,7 +696,8 @@ queue<Action> ComportamientoJugador::nivel_0_1(const estado &inicio, const ubica
 			{
 				//nodos_abiertos = frontier.size();
 				//nodos_cerrados = explorados.size();
-				plan = child.secuencia;
+				plan = child.secuencia();
+				liberar_memoria_nodo(child.p_nodo_accion);
 				break;
 			}
 			else if (explorados.find(child.st) == explorados.end())

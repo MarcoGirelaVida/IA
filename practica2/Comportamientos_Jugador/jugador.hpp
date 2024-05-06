@@ -10,9 +10,26 @@
 #include <list>
 #include <map>
 #include <unordered_set>
+#include <stack>
 
 static const vector<Action> acciones_jugador = {actWALK, actRUN, actTURN_L, actTURN_SR, actIDLE};
 static const vector<Action> acciones_jugador_colaborador = {actWALK, actRUN, actTURN_L, actTURN_SR, act_CLB_WALK, act_CLB_TURN_SR, act_CLB_STOP, actIDLE};
+struct nodo_accion
+{
+  const Action accion;
+  const nodo_accion* padre;
+  nodo_accion() : accion(actIDLE), padre(nullptr) {}
+  nodo_accion(const Action a, const nodo_accion* p) : accion(a), padre(p) {}
+  nodo_accion& operator=(const nodo_accion& otro)
+  {
+    if (this != &otro)
+    {
+      const_cast<Action&>(accion) = otro.accion;
+      const_cast<nodo_accion*&>(padre) = const_cast<nodo_accion*>(otro.padre);
+    }
+    return *this;
+  }
+};
 struct estado
 {
   ubicacion jugador, colaborador;
@@ -47,9 +64,10 @@ struct nodo
 {
   unsigned short coste, coste_con_heuristica;
   estado st;
-  queue<Action> secuencia;
+  //queue<Action> secuencia;
+  const nodo_accion *p_nodo_accion;
 
-  nodo() : coste(0), coste_con_heuristica(0) {}
+  nodo() : coste(0), coste_con_heuristica(0), st(), p_nodo_accion(nullptr) {}
 
   bool operator==(const nodo& otro) const { return (st == otro.st); }
   bool operator<(const nodo& otro) const { return st < otro.st; }
@@ -61,6 +79,24 @@ struct nodo
       return (uno.coste_con_heuristica > otro.coste_con_heuristica);
     }
   };
+
+  queue<Action> secuencia() const
+  {
+    stack<Action> pila;
+    nodo_accion actual = *p_nodo_accion;
+    while (actual.padre != nullptr)
+    {
+      pila.push(actual.accion);
+      actual = *actual.padre;
+    }
+    queue<Action> secuencia;
+    while (!pila.empty())
+    {
+      secuencia.push(pila.top());
+      pila.pop();
+    }
+    return secuencia;
+  }
 };
 
 class ComportamientoJugador : public Comportamiento {
@@ -102,7 +138,7 @@ class ComportamientoJugador : public Comportamiento {
 // ----------------- FUNCIONES DE LA DEBUGGING ----------------- 
 
     void mostrar_lista(const queue<nodo> &q, bool completa = false) const;
-    void mostrar_lista(const priority_queue<nodo, vector<nodo>, greater<nodo>> &q, bool completa) const;
+    void mostrar_lista(const priority_queue<nodo, vector<nodo>, nodo::mayor_coste> &q, bool completa) const;
     void mostrar_ubicacion(const ubicacion &ub) const;
     void mostrar_estado(const estado &st, const unsigned char nivel) const;
     void mostrar_nodo(const nodo &nd, const unsigned char nivel, bool mostrar_secuencia = false) const;
@@ -138,6 +174,9 @@ class ComportamientoJugador : public Comportamiento {
     unsigned short distancia_chebyshev(const ubicacion &ub, const ubicacion &final) const;
     nodo generar_nodo(const Action a, const nodo &padre, const unsigned char nivel, const ubicacion &final = {0,0}) const;
     estado generar_estado(const Action a, const estado &st, const unsigned char nivel) const;
+    void liberar_memoria_grafo(queue<nodo> &frontier) const;
+    void liberar_memoria_grafo(priority_queue<nodo, vector<nodo>, nodo::mayor_coste> &frontier) const;
+    void liberar_memoria_nodo(const nodo_accion *nodo) const;
 
 // ----------------- FUNCIONES DE LA BÚSQUEDA ------------------ 
 
