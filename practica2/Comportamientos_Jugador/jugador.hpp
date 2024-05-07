@@ -46,17 +46,18 @@ struct estado
   
   bool operator<(const estado& otro) const
   {
-    if (jugador.f < otro.jugador.f) return true;
-    else if (jugador.f == otro.jugador.f and jugador.c < otro.jugador.c) return true;
-    else if (jugador.f == otro.jugador.f and jugador.c == otro.jugador.c and jugador.brujula < otro.jugador.brujula) return true;
-    else if (jugador == otro.jugador and colaborador.f < otro.colaborador.f) return true;
-    else if (jugador == otro.jugador and colaborador.f == otro.colaborador.f and colaborador.c < otro.colaborador.c) return true;
-    else if (jugador == otro.jugador and colaborador.f == otro.colaborador.f and colaborador.c == otro.colaborador.c and colaborador.brujula < otro.colaborador.brujula) return true;
-    else if (jugador == otro.jugador and colaborador == otro.colaborador and bikini < otro.bikini) return true;
-    else if (jugador == otro.jugador and colaborador == otro.colaborador and bikini == otro.bikini and zapatillas < otro.zapatillas) return true;
-    else if (jugador == otro.jugador and colaborador == otro.colaborador and bikini == otro.bikini and zapatillas == otro.zapatillas and bikini_colab < otro.bikini_colab) return true;
-    else if (jugador == otro.jugador and colaborador == otro.colaborador and bikini == otro.bikini and zapatillas == otro.zapatillas and bikini_colab == otro.bikini_colab and zapatillas_colab < otro.zapatillas_colab) return true;
-    else if (jugador == otro.jugador and colaborador == otro.colaborador and bikini == otro.bikini and zapatillas == otro.zapatillas and bikini_colab == otro.bikini_colab and zapatillas_colab == otro.zapatillas_colab and ultima_orden_colaborador < otro.ultima_orden_colaborador) return true;
+    if ((jugador.f < otro.jugador.f)
+    or (jugador.f == otro.jugador.f and jugador.c < otro.jugador.c) 
+    or (jugador.f == otro.jugador.f and jugador.c == otro.jugador.c and jugador.brujula < otro.jugador.brujula) 
+    or (jugador == otro.jugador and colaborador.f < otro.colaborador.f) 
+    or (jugador == otro.jugador and colaborador.f == otro.colaborador.f and colaborador.c < otro.colaborador.c) 
+    or (jugador == otro.jugador and colaborador.f == otro.colaborador.f and colaborador.c == otro.colaborador.c and colaborador.brujula < otro.colaborador.brujula) 
+    or (jugador == otro.jugador and colaborador == otro.colaborador and bikini < otro.bikini) 
+    or (jugador == otro.jugador and colaborador == otro.colaborador and bikini == otro.bikini and zapatillas < otro.zapatillas) 
+    or (jugador == otro.jugador and colaborador == otro.colaborador and bikini == otro.bikini and zapatillas == otro.zapatillas and bikini_colab < otro.bikini_colab) 
+    or (jugador == otro.jugador and colaborador == otro.colaborador and bikini == otro.bikini and zapatillas == otro.zapatillas and bikini_colab == otro.bikini_colab and zapatillas_colab < otro.zapatillas_colab) 
+    or (jugador == otro.jugador and colaborador == otro.colaborador and bikini == otro.bikini and zapatillas == otro.zapatillas and bikini_colab == otro.bikini_colab and zapatillas_colab == otro.zapatillas_colab and ultima_orden_colaborador < otro.ultima_orden_colaborador))
+      return true;
     else return false;
   }
 };
@@ -97,23 +98,60 @@ struct nodo
     }
     return secuencia;
   }
+
+  queue<Action> secuencia_nivel_4() const
+  {
+    queue<Action> secuencia;
+    nodo_accion actual = *p_nodo_accion;
+    while (actual.padre != nullptr)
+    {
+      secuencia.push(actual.accion);
+      actual = *actual.padre;
+    }
+    return secuencia;
+  }
+
 };
 
 class ComportamientoJugador : public Comportamiento {
   public:
 
     ComportamientoJugador(unsigned int size) : Comportamiento(size),
-    hayPlan(false), paso(0), hijos_explorados(0), nodos_abiertos(0), nodos_cerrados(0), consumo_total_bateria(0), ultima_accion(actIDLE)
+    hayPlan(false), buscando_recargador(false), paso(0), hijos_explorados(0), nodos_abiertos(0), nodos_cerrados(0), consumo_total_bateria(0), ultima_accion(actIDLE)
     {
       poner_bordes_en_matriz();
       reset();
+      if (mapaResultado.size() == 100)
+      {
+        umbral_porcentaje_bateria = 75;
+        umbral_ciclos_recarga = 400;
+        umbral_vida = 200;
+      }
+      else
+      {
+        umbral_porcentaje_bateria = 40;
+        umbral_ciclos_recarga = 100;
+        umbral_vida = 250;
+      }
     }
     ComportamientoJugador(std::vector< std::vector< unsigned char> > mapaR) : Comportamiento(mapaR),
-    hayPlan(false), paso(0), hijos_explorados(0), nodos_abiertos(0), nodos_cerrados(0), consumo_total_bateria(0), ultima_accion(actIDLE)
+    hayPlan(false), buscando_recargador(0), paso(0), hijos_explorados(0), nodos_abiertos(0), nodos_cerrados(0), consumo_total_bateria(0), ultima_accion(actIDLE)
     {
 
       poner_bordes_en_matriz();
       reset();
+      if (mapaResultado.size() == 100)
+      {
+        umbral_porcentaje_bateria = 50;
+        umbral_ciclos_recarga = 200;
+        umbral_vida = 250;
+      }
+      else
+      {
+        umbral_porcentaje_bateria = 40;
+        umbral_ciclos_recarga = 100;
+        umbral_vida = 250;
+      }
     }
     ComportamientoJugador(const ComportamientoJugador & comport) : Comportamiento(comport){}
     ~ComportamientoJugador(){}
@@ -121,21 +159,30 @@ class ComportamientoJugador : public Comportamiento {
   private:
     size_t hijos_explorados, nodos_abiertos, nodos_cerrados, consumo_total_bateria, paso;
     estado c_state;
-    ubicacion goal, debug = {44, 1, norte};
+    ubicacion goal;
     queue<Action> plan, plan_colaborador;
-    queue<nodo> plan_nodos;
+    //queue<nodo> plan_nodos;
     bool hayPlan;
+    unsigned char iteracion = 0;
 
     // ----------- VARIABLES DE LA BUSQUEDA REACTIVA -----------
+    bool comparador_ubicaciones(const ubicacion& a, const ubicacion& b)
+    {
+      return (a.f < b.f) or (a.f == b.f and a.c < b.c);
+    }
     Action ultima_accion;
-    bool ubicado, recargador_encontrado, recargando;
+    bool ubicado, buscando_recargador, recargando;
+    float umbral_porcentaje_bateria;
+    unsigned short umbral_ciclos_recarga, umbral_vida;
     unsigned short prioridad_recarga;
     unsigned short ciclos_desde_ultima_recarga;
-    //map<ubicacion, char, comparador_ubicaciones> casillas_agentes;
-    //priority_queue<ubicacion> recargadores;
-//--------------------------------------------------------------------------------------------------------------
+    queue<ubicacion> recargadores;
+    queue<pair<ubicacion, unsigned char>> casillas_agentes;
+    queue<estado> estados_teoricos;
+      
+    //--------------------------------------------------------------------------------------------------------------
 
-// ----------------- FUNCIONES DE LA DEBUGGING ----------------- 
+    // ----------------- FUNCIONES DE LA DEBUGGING ----------------- 
 
     void mostrar_lista(const queue<nodo> &q, bool completa = false) const;
     void mostrar_lista(const priority_queue<nodo, vector<nodo>, nodo::mayor_coste> &q, bool completa) const;
@@ -147,7 +194,8 @@ class ComportamientoJugador : public Comportamiento {
     void anula_matriz(vector<vector<unsigned char>> & matriz);
     void PintaPlan(const queue<Action> &plan) const;
     void VisualizaPlan(const estado &st, const queue<Action> &plan);
-    queue<nodo> generar_nodos_secuencia(const queue<Action> &plan, const estado &inicio);
+    queue<nodo> generar_nodos_secuencia(const queue<Action> &plan, const estado &inicio, const unsigned char nivel) const;
+    queue<estado> generar_estados_secuencia(queue<Action> &plan, const estado &inicio, const unsigned char nivel) const;
     
 // ----------------- FUNCIONES MAIN ----------------------------
 
@@ -159,6 +207,7 @@ class ComportamientoJugador : public Comportamiento {
 
 // ----------------- FUNCIONES DE LA CONSULTA ------------------ 
 
+    ubicacion recargador_mas_cercano();
     ubicacion next_casilla(const ubicacion &pos) const;
     ubicacion traductor_posicion(const ubicacion &pos, const int offset_fil, const int offset_col) const;
     bool es_solucion (const estado &st, const ubicacion &final, const unsigned char nivel) const;
