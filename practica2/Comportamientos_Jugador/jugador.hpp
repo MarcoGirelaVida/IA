@@ -123,14 +123,14 @@ class ComportamientoJugador : public Comportamiento {
       poner_bordes_en_matriz();
       reset();
 
-    umbral_porcentaje_bateria_maximo = 1;
-    umbral_porcentaje_bateria = 0.75;
-    umbral_ciclos_recarga = 0.2;
-    umbral_vida = 0.1;
+      umbral_porcentaje_bateria_maximo = 1;
+      umbral_porcentaje_bateria = 0.75;
+      umbral_ciclos_recarga = 0.2;
+      umbral_vida = 0.1;
 
-    umbral_porcentaje_bateria *= mapaResultado.size() / 100.0; 
-    umbral_ciclos_recarga *= mapaResultado.size()*20.0;
-    umbral_vida *= mapaResultado.size()*20.0;
+      umbral_porcentaje_bateria *= mapaResultado.size() / 100.0; 
+      umbral_ciclos_recarga *= mapaResultado.size()*20.0;
+      umbral_vida *= mapaResultado.size()*20.0;
     }
     ComportamientoJugador(std::vector< std::vector< unsigned char> > mapaR) : Comportamiento(mapaR) {}
     ComportamientoJugador(const ComportamientoJugador & comport) : Comportamiento(comport){}
@@ -142,7 +142,7 @@ class ComportamientoJugador : public Comportamiento {
     ubicacion goal;
     queue<Action> plan, plan_colaborador;
     //queue<nodo> plan_nodos;
-    bool hayPlan;
+    bool hayPlan, plan_con_colaborador;
     unsigned char iteracion = 0;
 
     // ----------- VARIABLES DE LA BUSQUEDA REACTIVA -----------
@@ -151,9 +151,8 @@ class ComportamientoJugador : public Comportamiento {
       return (a.f < b.f) or (a.f == b.f and a.c < b.c);
     }
     Action ultima_accion;
-    bool ubicado, buscando_recargador, recargando;
+    bool ubicado, buscando_recargador, recargando, colaborador_encontrado;
     float umbral_porcentaje_bateria, umbral_porcentaje_bateria_maximo, umbral_ciclos_recarga, umbral_vida;
-    unsigned short prioridad_recarga;
     unsigned short ciclos_desde_ultima_recarga;
     queue<ubicacion> recargadores;
     //queue<pair<ubicacion, unsigned char>> casillas_agentes;
@@ -181,15 +180,19 @@ class ComportamientoJugador : public Comportamiento {
 
     void reset();
     void poner_bordes_en_matriz();
-    void registrar_sensores(Sensores sensor);
+    queue<Action> generar_plan(const estado &origen, const ubicacion &destino, const unsigned char nivel);
+    ubicacion determinar_objetivo(const Sensores &sensores);
+    void registrar_sensor_terreno(const Sensores &sensor);
+    void registrar_sensor_ubicacion(const Sensores &sensor);
     void registrar_estado(const Sensores &sensores, const Action a);
     Action think(Sensores sensores);
 
 // ----------------- FUNCIONES DE LA CONSULTA ------------------ 
 
-    ubicacion recargador_mas_cercano();
+    ubicacion recargador_mas_cercano() const;
     ubicacion next_casilla(const ubicacion &pos) const;
     ubicacion traductor_posicion(const ubicacion &pos, const int offset_fil, const int offset_col) const;
+    bool hay_que_recargar(const unsigned short bateria_actual, const unsigned short vida_actual) const;
     bool accion_costosa(const Action a, const estado &st, const estado &st_antiguo) const;
     bool es_solucion (const estado &st, const ubicacion &final, const unsigned char nivel) const;
     bool esta_en_rango_vision(const estado &st) const;

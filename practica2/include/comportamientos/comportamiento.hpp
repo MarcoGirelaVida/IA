@@ -37,6 +37,7 @@ struct Sensores {
   int destinoF;
   int destinoC;
   bool CLBgoal;
+  float umbral_porcentaje_bateria_maximo, umbral_porcentaje_bateria, umbral_ciclos_recarga, umbral_vida;
 };
 
 

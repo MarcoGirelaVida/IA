@@ -25,6 +25,8 @@ enum SubTipo
 
 class Entidad
 {
+public:
+  float umbral_porcentaje_bateria_maximo, umbral_porcentaje_bateria, umbral_ciclos_recarga, umbral_vida;
 private:
   Tipo tipo;
   SubTipo subtipo;
@@ -88,8 +90,14 @@ private:
   bool llegoObjetivo;
 
 public:
-  Entidad(Tipo paramTipo, SubTipo paramSubTipo, Orientacion paramOrient, unsigned int paramF, unsigned int paramC, Objeto3D *mod, Comportamiento *comp, int numberdest, vector<unsigned int> CasillasObjetivo, int v)
+  Entidad(Tipo paramTipo, SubTipo paramSubTipo, Orientacion paramOrient, unsigned int paramF, unsigned int paramC, Objeto3D *mod, Comportamiento *comp, int numberdest, vector<unsigned int> CasillasObjetivo, int v,
+  float u_porcentaje_bateria_maximo = 1, float u_porcentaje_bateria = 0.75, float u_ciclos_recarga = 0.2, float u_vida = 0.1)
   {
+    umbral_porcentaje_bateria_maximo = u_porcentaje_bateria_maximo;
+    umbral_porcentaje_bateria = u_porcentaje_bateria;
+    umbral_ciclos_recarga = u_ciclos_recarga;
+    umbral_vida = u_vida;
+
     tipo = paramTipo;
     subtipo = paramSubTipo;
     orient = paramOrient;

@@ -223,6 +223,10 @@ Action Entidad::think(int acc, vector<vector<unsigned char>> vision, int level)
       sensor.destinoC = destino[1];
     }
 
+    sensor.umbral_ciclos_recarga = umbral_ciclos_recarga;
+    sensor.umbral_porcentaje_bateria = umbral_porcentaje_bateria;
+    sensor.umbral_porcentaje_bateria_maximo = umbral_porcentaje_bateria_maximo;
+    sensor.umbral_vida = umbral_vida;
     sensor.agentes = vision[1];
     sensor.terreno = vision[0];
 

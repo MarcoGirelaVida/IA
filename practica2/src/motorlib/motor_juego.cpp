@@ -96,7 +96,7 @@ bool actuacionJugador(unsigned char celdaJ_inicial, unsigned char celdaJ_fin, un
       if (monitor.get_entidad(0)->isMemberObjetivo(x, y) != -1 and monitor.get_entidad(0)->allLessOneObjetivosAlcanzados())
       {
         // acaba de completar todos los objetivos.
-        cout << "-----> Casilla objetivo alcanzada por el jugador\n";
+        //cout << "-----> Casilla objetivo alcanzada por el jugador\n";
         monitor.get_entidad(0)->setCompletoLosObjetivos();
         if (monitor.getLevel() == 4)
         {
@@ -238,7 +238,7 @@ bool actuacionJugador(unsigned char celdaJ_inicial, unsigned char celdaJ_fin, un
       }
       if (monitor.get_entidad(0)->isMemberObjetivo(x, y) != -1 and monitor.get_entidad(0)->allLessOneObjetivosAlcanzados())
       {
-        cout << "-----> Casilla objetivo alcanzada por el jugador\n";
+        //cout << "-----> Casilla objetivo alcanzada por el jugador\n";
         // acaba de completar todos los objetivos.
         monitor.get_entidad(0)->setCompletoLosObjetivos();
         if (monitor.getLevel() == 4)

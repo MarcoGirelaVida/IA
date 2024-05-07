@@ -84,7 +84,7 @@ int main(int argc, char **argv)
 
     int i = 10;
 
-    while (argc > i + 1)
+    while ((argc-4) > i + 1)
     {
       // Reviso si es una posicion valida
       if (mapAux[atoi(argv[i])][atoi(argv[i + 1])] == 'P' and mapAux[atoi(argv[i])][atoi(argv[i + 1])] == 'M')
@@ -100,6 +100,10 @@ int main(int argc, char **argv)
     monitor.inicializar(atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), atoi(argv[7]), atoi(argv[8]), atoi(argv[9]), atoi(argv[2]));
     monitor.get_entidad(0)->setOrientacion(static_cast<Orientacion>(atoi(argv[6])));
     monitor.get_entidad(0)->setBateria(3000);
+    monitor.get_entidad(0)->umbral_porcentaje_bateria_maximo = stof(argv[i]);
+    monitor.get_entidad(0)->umbral_porcentaje_bateria = stof(argv[i+1]);
+    monitor.get_entidad(0)->umbral_ciclos_recarga = stof(argv[i+2]);
+    monitor.get_entidad(0)->umbral_vida = stof(argv[i+3]);
     //monitor.get_entidad(0)->Cogio_Bikini(false);
     //monitor.get_entidad(0)->Cogio_Zapatillas(false);
     monitor.get_entidad(1)->setOrientacion(static_cast<Orientacion>(atoi(argv[9])));
