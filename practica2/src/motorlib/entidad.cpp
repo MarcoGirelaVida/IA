@@ -137,7 +137,7 @@ Action Entidad::think(int acc, vector<vector<unsigned char>> vision, int level)
     {
       if (EntidadColaborador->f == destino[0] and EntidadColaborador->c == destino[1] and (level == 1 or level == 3 or level == 4))
       {
-        cout << "Mision alcanzada por el colaborador!" << endl;
+        //cout << "Mision alcanzada por el colaborador!" << endl;
 
         if (level != 4)
         {
@@ -162,22 +162,22 @@ Action Entidad::think(int acc, vector<vector<unsigned char>> vision, int level)
           misiones++;
           completoLosObjetivos = false;
         }
-        cout << "Mision alcanzada por el jugador!" << endl;
+        //cout << "Mision alcanzada por el jugador!" << endl;
       }
       else if (sensor.bateria == 0)
       {
         done = true;
-        cout << "Se agoto la bateria!" << endl;
+        //cout << "Se agoto la bateria!" << endl;
       }
       else if (sensor.vida == 0)
       {
         done = true;
-        cout << "Se agotaron los instantes de simulacion" << endl;
+        //cout << "Se agotaron los instantes de simulacion" << endl;
       }
       else if (getTiempo() > getTiempoMaximo())
       {
         done = true;
-        cout << "Se agoto el tiempo de deliberacion!" << endl;
+        //cout << "Se agoto el tiempo de deliberacion!" << endl;
       }
     }
 

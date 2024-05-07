@@ -756,13 +756,14 @@ bool lanzar_motor_juego(int &colisiones, int acc)
 
     if (monitor.mostrarResultados())
     {
-      std::cout << "Instantes de simulacion no consumidos: " << monitor.get_entidad(0)->getInstantesPendientes() << endl;
-      std::cout << "Tiempo Consumido: " << 1.0 * monitor.get_entidad(0)->getTiempo() / CLOCKS_PER_SEC << endl;
-      std::cout << "Nivel Final de Bateria: " << monitor.get_entidad(0)->getBateria() << endl;
-      std::cout << "Colisiones: " << monitor.get_entidad(0)->getColisiones() << endl;
-      std::cout << "Empujones: " << monitor.get_entidad(0)->getEmpujones() << endl;
-      std::cout << "Porcentaje de mapa descubierto: " << monitor.CoincidenciaConElMapa() << endl;
-      std::cout << "Objetivos encontrados: (" << monitor.get_entidad(0)->getMisiones() << ") " << monitor.get_entidad(0)->getPuntuacion() << endl;
+      //std::cout << "Instantes de simulacion no consumidos: " << monitor.get_entidad(0)->getInstantesPendientes() << endl;
+      //std::cout << "Tiempo Consumido: " << 1.0 * monitor.get_entidad(0)->getTiempo() / CLOCKS_PER_SEC << endl;
+      //std::cout << "Nivel Final de Bateria: " << monitor.get_entidad(0)->getBateria() << endl;
+      //std::cout << "Colisiones: " << monitor.get_entidad(0)->getColisiones() << endl;
+      //std::cout << "Empujones: " << monitor.get_entidad(0)->getEmpujones() << endl;
+      //std::cout << "Porcentaje de mapa descubierto: " << monitor.CoincidenciaConElMapa() << endl;
+      //std::cout << "Objetivos encontrados: (" << monitor.get_entidad(0)->getMisiones() << ") " << monitor.get_entidad(0)->getPuntuacion() << endl;
+      std::cout << monitor.get_entidad(0)->getPuntuacion() << endl;
       monitor.setMostrarResultados(false);
 
       out = true;
@@ -793,13 +794,14 @@ void lanzar_motor_juego2(MonitorJuego &monitor)
   }
   else if (monitor.mostrarResultados())
   {
-    std::cout << "Instantes de simulacion no consumidos: " << monitor.get_entidad(0)->getInstantesPendientes() << endl;
-    std::cout << "Tiempo Consumido: " << 1.0 * monitor.get_entidad(0)->getTiempo() / CLOCKS_PER_SEC << endl;
-    std::cout << "Nivel Final de Bateria: " << monitor.get_entidad(0)->getBateria() << endl;
-    std::cout << "Colisiones: " << monitor.get_entidad(0)->getColisiones() << endl;
-    std::cout << "Empujones: " << monitor.get_entidad(0)->getEmpujones() << endl;
-    std::cout << "Porcentaje de mapa descubierto: " << monitor.CoincidenciaConElMapa() << endl;
-    std::cout << "Objetivos encontrados: (" << monitor.get_entidad(0)->getMisiones() << ") " << monitor.get_entidad(0)->getPuntuacion() << endl;
+    //std::cout << "Instantes de simulacion no consumidos: " << monitor.get_entidad(0)->getInstantesPendientes() << endl;
+    //std::cout << "Tiempo Consumido: " << 1.0 * monitor.get_entidad(0)->getTiempo() / CLOCKS_PER_SEC << endl;
+    //std::cout << "Nivel Final de Bateria: " << monitor.get_entidad(0)->getBateria() << endl;
+    //std::cout << "Colisiones: " << monitor.get_entidad(0)->getColisiones() << endl;
+    //std::cout << "Empujones: " << monitor.get_entidad(0)->getEmpujones() << endl;
+    //std::cout << "Porcentaje de mapa descubierto: " << monitor.CoincidenciaConElMapa() << endl;
+    //std::cout << "Objetivos encontrados: (" << monitor.get_entidad(0)->getMisiones() << ") " << monitor.get_entidad(0)->getPuntuacion() << endl;
+    std::cout << monitor.get_entidad(0)->getPuntuacion() << endl;
     monitor.setMostrarResultados(false);
   }
 }
