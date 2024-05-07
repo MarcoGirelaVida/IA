@@ -281,7 +281,11 @@ void ComportamientoJugador::registrar_estado(const Sensores &sensores, const Act
 /*---------------------------------------------------------------------------------------------*/
 	// Decido si el objetivo será el recargador o el destino
 	sensores.bateria;
-	prioridad_recarga = ((sensores.bateria / 3000.0)*100.0 <= umbral_porcentaje_bateria) && (sensores.vida >= umbral_vida) && (ciclos_desde_ultima_recarga >= umbral_ciclos_recarga); //&& distancia_chebyshev(c_state.jugador, recargador_mas_cercano())*umbral_vida);
+	prioridad_recarga =
+						((sensores.bateria / 3000.0) <= umbral_porcentaje_bateria) &&
+						//distancia_chebyshev(c_state.jugador, recargador_mas_cercano())*umbral_vida) &&
+						(sensores.vida >= umbral_vida) &&
+						(ciclos_desde_ultima_recarga >= umbral_ciclos_recarga); 
 	if (prioridad_recarga and !recargadores.empty() and !buscando_recargador)
 	{
 		//cerr << "BUSCANDO RECARGADOR" << endl;
@@ -340,7 +344,7 @@ Action ComportamientoJugador::think(Sensores sensores)
 		case 1: plan = nivel_0_1(c_state, goal, 1); break;
 		case 2: plan = nivel_2_3_4(c_state, goal, 2); break;
 		case 3: plan = nivel_2_3_4(c_state, goal, 3); break;
-		case 4: plan = nivel_2_3_4(c_state, goal, 4); break;
+		case 4: plan = nivel_2_3_4(c_state, goal, 2); break;
 		}
 
 		if (plan.empty() and sensores.nivel < 4) { cerr << "ERROR: No se ha encontrado un plan" << endl; exit(1); }
@@ -397,6 +401,7 @@ Action ComportamientoJugador::think(Sensores sensores)
 		estado estado_real = generar_estado(accion, c_state, sensores.nivel);
 		if(estados_teoricos.front() != estado_real or accion_costosa(accion, estado_real, c_state))
 		{
+			//cerr << "REAJUSTANDO PLAN" << endl;
 			hayPlan = false;
 			accion = actIDLE;
 		}
@@ -669,7 +674,7 @@ nodo ComportamientoJugador::generar_nodo(const Action a, const nodo &padre, cons
 	hijo.coste_con_heuristica = hijo.coste = padre.coste + coste_accion_total(a, padre.st);
 
 	if (nivel < 3) return hijo;
-	hijo.coste_con_heuristica += nivel == 3 ? distancia_chebyshev(padre.st.colaborador, final) : 0;//distancia_chebyshev(padre.st.jugador, final);
+	hijo.coste_con_heuristica += nivel == 3 ? distancia_chebyshev(padre.st.colaborador, final) : distancia_chebyshev(padre.st.jugador, final);
 
 	return hijo;
 }
