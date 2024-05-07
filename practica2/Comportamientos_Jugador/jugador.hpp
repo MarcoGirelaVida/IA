@@ -35,6 +35,7 @@ struct estado
   ubicacion jugador, colaborador;
   Action ultima_orden_colaborador;
   bool zapatillas, bikini, zapatillas_colab, bikini_colab;
+  //unsigned char valor_casilla_jugador, valor_casilla_colaborador;
 
   estado() : bikini(false), zapatillas(false), bikini_colab(false), zapatillas_colab(false), ultima_orden_colaborador(act_CLB_STOP) {}
 
@@ -117,42 +118,21 @@ class ComportamientoJugador : public Comportamiento {
   public:
 
     ComportamientoJugador(unsigned int size) : Comportamiento(size),
-    hayPlan(false), buscando_recargador(false), paso(0), hijos_explorados(0), nodos_abiertos(0), nodos_cerrados(0), consumo_total_bateria(0), ultima_accion(actIDLE)
+    hayPlan(false), paso(0), hijos_explorados(0), nodos_abiertos(0), nodos_cerrados(0), consumo_total_bateria(0), ultima_accion(actIDLE)
     {
       poner_bordes_en_matriz();
       reset();
-      if (mapaResultado.size() == 100)
-      {
-        umbral_porcentaje_bateria = 75;
-        umbral_ciclos_recarga = 400;
-        umbral_vida = 200;
-      }
-      else
-      {
-        umbral_porcentaje_bateria = 40;
-        umbral_ciclos_recarga = 100;
-        umbral_vida = 250;
-      }
-    }
-    ComportamientoJugador(std::vector< std::vector< unsigned char> > mapaR) : Comportamiento(mapaR),
-    hayPlan(false), buscando_recargador(0), paso(0), hijos_explorados(0), nodos_abiertos(0), nodos_cerrados(0), consumo_total_bateria(0), ultima_accion(actIDLE)
-    {
 
-      poner_bordes_en_matriz();
-      reset();
-      if (mapaResultado.size() == 100)
-      {
-        umbral_porcentaje_bateria = 50;
-        umbral_ciclos_recarga = 200;
-        umbral_vida = 250;
-      }
-      else
-      {
-        umbral_porcentaje_bateria = 40;
-        umbral_ciclos_recarga = 100;
-        umbral_vida = 250;
-      }
+    umbral_porcentaje_bateria_maximo = 1;
+    umbral_porcentaje_bateria = 0.75;
+    umbral_ciclos_recarga = 4;
+    umbral_vida = 2;
+
+    umbral_porcentaje_bateria = (mapaResultado.size() * umbral_porcentaje_bateria); 
+    umbral_ciclos_recarga *= mapaResultado.size();
+    umbral_vida *= mapaResultado.size();
     }
+    ComportamientoJugador(std::vector< std::vector< unsigned char> > mapaR) : Comportamiento(mapaR) {}
     ComportamientoJugador(const ComportamientoJugador & comport) : Comportamiento(comport){}
     ~ComportamientoJugador(){}
 
@@ -172,12 +152,13 @@ class ComportamientoJugador : public Comportamiento {
     }
     Action ultima_accion;
     bool ubicado, buscando_recargador, recargando;
-    float umbral_porcentaje_bateria;
+    float umbral_porcentaje_bateria, umbral_porcentaje_bateria_maximo;
     unsigned short umbral_ciclos_recarga, umbral_vida;
     unsigned short prioridad_recarga;
     unsigned short ciclos_desde_ultima_recarga;
     queue<ubicacion> recargadores;
-    queue<pair<ubicacion, unsigned char>> casillas_agentes;
+    //queue<pair<ubicacion, unsigned char>> casillas_agentes;
+
     queue<estado> estados_teoricos;
       
     //--------------------------------------------------------------------------------------------------------------
@@ -210,6 +191,7 @@ class ComportamientoJugador : public Comportamiento {
     ubicacion recargador_mas_cercano();
     ubicacion next_casilla(const ubicacion &pos) const;
     ubicacion traductor_posicion(const ubicacion &pos, const int offset_fil, const int offset_col) const;
+    bool accion_costosa(const Action a, const estado &st, const estado &st_antiguo) const;
     bool es_solucion (const estado &st, const ubicacion &final, const unsigned char nivel) const;
     bool esta_en_rango_vision(const estado &st) const;
     bool casilla_transitable(const estado &cst, bool colaborador) const;

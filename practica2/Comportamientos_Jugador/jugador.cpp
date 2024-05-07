@@ -252,8 +252,8 @@ void ComportamientoJugador::registrar_sensores(Sensores sensor)
 	 {
 		ubicacion ub = traductor_posicion(c_state.jugador, vector_pos[i].first, vector_pos[i].second);
 		mapaResultado[ub.f][ub.c] = sensor.terreno[i];
-		if (sensor.agentes[i] != '_' && sensor.agentes[i] != 'j')
-			casillas_agentes.push(make_pair(ub, sensor.agentes[i]));
+		//if (sensor.agentes[i] != '_' && sensor.agentes[i] != 'j')
+		//	casillas_agentes.push(make_pair(ub, sensor.agentes[i]));
 		if (sensor.terreno[i] == 'X')
 			recargadores.push(ub);
 	 }
@@ -263,6 +263,7 @@ void ComportamientoJugador::reset()
 	hayPlan = false;
 	ubicado = false;
 	buscando_recargador = false;
+	recargando = false;
 	c_state.jugador.f = -1;
 	c_state.jugador.f = -1;
 	c_state.jugador.brujula = norte;
@@ -280,7 +281,7 @@ void ComportamientoJugador::registrar_estado(const Sensores &sensores, const Act
 /*---------------------------------------------------------------------------------------------*/
 	// Decido si el objetivo será el recargador o el destino
 	sensores.bateria;
-	prioridad_recarga = ((sensores.bateria / 3000.0)*100.0 <= umbral_porcentaje_bateria) && (ciclos_desde_ultima_recarga >= umbral_ciclos_recarga) && (sensores.vida >= umbral_vida);
+	prioridad_recarga = ((sensores.bateria / 3000.0)*100.0 <= umbral_porcentaje_bateria) && (sensores.vida >= umbral_vida) && (ciclos_desde_ultima_recarga >= umbral_ciclos_recarga); //&& distancia_chebyshev(c_state.jugador, recargador_mas_cercano())*umbral_vida);
 	if (prioridad_recarga and !recargadores.empty() and !buscando_recargador)
 	{
 		//cerr << "BUSCANDO RECARGADOR" << endl;
@@ -291,7 +292,7 @@ void ComportamientoJugador::registrar_estado(const Sensores &sensores, const Act
 
 	// Si estoy en una casilla de recarga, descuento la batería
 	if (sensores.terreno[0] == 'X')
-		if (!(hayPlan = buscando_recargador = recargando = prioridad_recarga))
+		if (!(hayPlan = buscando_recargador = recargando = (sensores.bateria / 3000.0) < umbral_porcentaje_bateria_maximo) or (sensores.vida >= umbral_vida))
 			ciclos_desde_ultima_recarga = 0;
 
 
@@ -314,7 +315,7 @@ void ComportamientoJugador::registrar_estado(const Sensores &sensores, const Act
 		registrar_sensores(sensores);
 	}
 
-	if ((!buscando_recargador and !hayPlan) or es_solucion(c_state, goal, sensores.nivel))
+	if ((!buscando_recargador and !hayPlan) or es_solucion(c_state, goal, sensores.nivel) or es_solucion(c_state, recargador_mas_cercano(), 1))
 	{
 		//cerr << "REELABORANDO PLAN PORQUE SE ENCONTRO EL DESTINO" << endl;
 		goal.f = sensores.destinoF;
@@ -332,6 +333,7 @@ Action ComportamientoJugador::think(Sensores sensores)
 
 	if (!hayPlan)
 	{
+		//cerr << "GENERANDO PLAN" << endl;
 		switch (sensores.nivel)
 		{
 		case 0: plan = nivel_0_1(c_state, goal, 0); break;
@@ -341,36 +343,42 @@ Action ComportamientoJugador::think(Sensores sensores)
 		case 4: plan = nivel_2_3_4(c_state, goal, 4); break;
 		}
 
-		if (plan.empty()) { cerr << "ERROR: No se ha encontrado un plan" << endl; exit(1); }
-		else
+		if (plan.empty() and sensores.nivel < 4) { cerr << "ERROR: No se ha encontrado un plan" << endl; exit(1); }
+		else if (plan.empty())
 		{
-			//cout << "--------PLAN ENCONTRADO--------" << endl;
-			////PintaPlan(plan); cerr << endl;
-			////mostrar_lista(generar_nodos_secuencia(plan, c_state), true);
-			//plan_nodos = generar_nodos_secuencia(plan, c_state, sensores.nivel);
-			//cerr << "BATERIA FINAL ESPERADA: " << sensores.bateria - consumo_total_bateria << endl;
-			//cerr << "COSTE BATERIA: " << consumo_total_bateria << endl;
-			//cerr << "PASOS TOTALES: " << plan.size() << endl;
-			//cerr << "INSTANTES ESPERADOS: " << 3000 - plan.size() << endl;
-			//cerr << "HIJOS TOTALES EXPLORADOS: " << hijos_explorados << endl;
-			//cerr << "NODOS ABIERTOS: " << nodos_abiertos << endl;
-			//cerr << "NODOS CERRADOS: " << nodos_cerrados << endl;
-			//cerr << "-----------------------" << endl;
-//
-			//paso++;
-			//cerr << "----- PASO " <<  paso << " -----" << endl;
-			//mostrar_nodo(plan_nodos.front(), sensores.nivel, false);
-			//cerr << "-----------------------" << endl;
-			//plan_nodos.pop();
-
-			estados_teoricos = generar_estados_secuencia(plan, c_state, sensores.nivel);
-			estados_teoricos.pop();
-
-			hayPlan = true;
-			VisualizaPlan(c_state, plan);
-			accion = plan.front();
-			plan.pop();
+		 	//cerr << "REPLANIFICANDO PORQUE NO SE ENCONTRO UN PLAN" << endl;
+			//cerr << "OBJETIVO: "; mostrar_ubicacion(goal); cerr << endl;
+			//cerr << "UBICACION JUGADOR: "; mostrar_ubicacion(c_state.jugador); cerr << endl;
+			//plan = nivel_2_3_4(c_state, goal, 3);
+			if (plan.empty()) { cerr << "ERROR: No se ha encontrado un plan" << endl; exit(1); }
 		}
+
+		estados_teoricos = generar_estados_secuencia(plan, c_state, sensores.nivel);
+		estados_teoricos.pop();
+
+		hayPlan = true;
+		VisualizaPlan(c_state, plan);
+		accion = plan.front();
+		plan.pop();
+
+		//cout << "--------PLAN ENCONTRADO--------" << endl;
+		////PintaPlan(plan); cerr << endl;
+		////mostrar_lista(generar_nodos_secuencia(plan, c_state), true);
+		//plan_nodos = generar_nodos_secuencia(plan, c_state, sensores.nivel);
+		//cerr << "BATERIA FINAL ESPERADA: " << sensores.bateria - consumo_total_bateria << endl;
+		//cerr << "COSTE BATERIA: " << consumo_total_bateria << endl;
+		//cerr << "PASOS TOTALES: " << plan.size() << endl;
+		//cerr << "INSTANTES ESPERADOS: " << 3000 - plan.size() << endl;
+		//cerr << "HIJOS TOTALES EXPLORADOS: " << hijos_explorados << endl;
+		//cerr << "NODOS ABIERTOS: " << nodos_abiertos << endl;
+		//cerr << "NODOS CERRADOS: " << nodos_cerrados << endl;
+		//cerr << "-----------------------" << endl;
+//
+		//paso++;
+		//cerr << "----- PASO " <<  paso << " -----" << endl;
+		//mostrar_nodo(plan_nodos.front(), sensores.nivel, false);
+		//cerr << "-----------------------" << endl;
+		//plan_nodos.pop();
 	}
 	else if (plan.size())
 	{
@@ -387,9 +395,8 @@ Action ComportamientoJugador::think(Sensores sensores)
 
 		estados_teoricos.pop();
 		estado estado_real = generar_estado(accion, c_state, sensores.nivel);
-		if(estados_teoricos.front() != estado_real)
+		if(estados_teoricos.front() != estado_real or accion_costosa(accion, estado_real, c_state))
 		{
-			//cerr << "ERROR: EL ESTADO REAL NO COINCIDE CON EL ESTADO TEORICO" << endl;
 			hayPlan = false;
 			accion = actIDLE;
 		}
@@ -401,6 +408,8 @@ Action ComportamientoJugador::think(Sensores sensores)
 	}
 
 	ultima_accion = accion;
+	//cerr << "PLAN ACTUAL: "; PintaPlan(plan); cerr << endl;
+	//cerr << "ACCION: "; accion_string(accion); cerr << endl;
 	return accion;
 }
 
@@ -451,6 +460,19 @@ ubicacion ComportamientoJugador::next_casilla(const ubicacion &pos) const
 	return traductor_posicion(pos, -1, offsetcol);
 }
 
+bool ComportamientoJugador::accion_costosa(const Action a, const estado &st, const estado &st_antiguo) const
+{
+	return (mapaResultado[st.jugador.f][st.jugador.c] == 'A' and !st.bikini )
+			or (mapaResultado[st.jugador.f][st.jugador.c] == 'B' and !st.zapatillas );
+	//bool costosa = false;
+	//if (a == act_CLB_WALK or a == act_CLB_TURN_SR or st.ultima_orden_colaborador == act_CLB_WALK or st.ultima_orden_colaborador == act_CLB_TURN_SR)
+	//	costosa = (st.valor_casilla_colaborador == 'A' and !st.bikini_colab and st_antiguo.valor_casilla_colaborador != 'A')
+	//			or (st.valor_casilla_colaborador == 'B' and !st.zapatillas_colab and st_antiguo.valor_casilla_colaborador != 'B');
+	//if (!costosa)
+	//	return (st.valor_casilla_jugador == 'A' and !st.bikini )//and st_antiguo.valor_casilla_jugador != 'A')
+	//		 	or (st.valor_casilla_jugador == 'B' and !st.zapatillas );//and st_antiguo.valor_casilla_jugador != 'B');
+	//return costosa;
+}
 bool ComportamientoJugador::esta_en_rango_vision(const estado &st) const
 {
 	const vector<pair<short, short>> pos_norte = { {0, 0}, {-1, -1}, {-1, 0}, {-1, 1}, {-2, -2}, {-2, -1}, {-2, 0}, {-2, 1}, {-2, 2}, {-3, -3}, {-3, -2}, {-3, -1}, {-3, 0}, {-3, 1}, {-3, 2}, {-3, 3} };
@@ -612,6 +634,9 @@ estado ComportamientoJugador::generar_estado(const Action a, const estado &st, c
 				salida = st;
 		}
 	}
+	//salida.valor_casilla_colaborador = mapaResultado[salida.colaborador.f][salida.colaborador.c];
+	//salida.valor_casilla_jugador = mapaResultado[salida.jugador.f][salida.jugador.c];
+
 	if (nivel < 2) return salida;
 
 	salida.bikini = st.bikini;
@@ -644,7 +669,7 @@ nodo ComportamientoJugador::generar_nodo(const Action a, const nodo &padre, cons
 	hijo.coste_con_heuristica = hijo.coste = padre.coste + coste_accion_total(a, padre.st);
 
 	if (nivel < 3) return hijo;
-	hijo.coste_con_heuristica += nivel == 3 ? distancia_chebyshev(padre.st.colaborador, final) : 0;
+	hijo.coste_con_heuristica += nivel == 3 ? distancia_chebyshev(padre.st.colaborador, final) : 0;//distancia_chebyshev(padre.st.jugador, final);
 
 	return hijo;
 }
