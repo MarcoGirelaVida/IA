@@ -33,7 +33,7 @@ bool actuacionJugador(unsigned char celdaJ_inicial, unsigned char celdaJ_fin, un
 
   if (gasto > monitor.get_entidad(0)->getBateria())
   {
-    cout << "La batería necesaria para las acciones seleccionadas superó a la batería disponible\n";
+    //cout << "La batería necesaria para las acciones seleccionadas superó a la batería disponible\n";
     monitor.get_entidad(0)->setBateria(0);
     
     return false;
@@ -50,10 +50,10 @@ bool actuacionJugador(unsigned char celdaJ_inicial, unsigned char celdaJ_fin, un
       {
       case 'M': // Muro
         monitor.get_entidad(0)->seAostio();
-        std::cout << "El jugador ha chocado con un muro\n";
+        //std::cout << "El jugador ha chocado con un muro\n";
         break;
       case 'P': // Precipicio
-        std::cout << "Se cayó por un precipicio\n";
+        //std::cout << "Se cayó por un precipicio\n";
         monitor.get_entidad(0)->resetEntidad();
         monitor.get_entidad(0)->setHitbox(true);
         monitor.finalizarJuego();
@@ -128,12 +128,12 @@ bool actuacionJugador(unsigned char celdaJ_inicial, unsigned char celdaJ_fin, un
       if (monitor.get_entidad(monitor.getMapa()->casillaOcupada(0))->getSubTipo() == aldeano)
       {
         monitor.get_entidad(0)->perderPV(1);
-        std::cout << "El jugador ha chocado con un aldeano\n";
+        //std::cout << "El jugador ha chocado con un aldeano\n";
       }
       else if (monitor.get_entidad(monitor.getMapa()->casillaOcupada(0))->getSubTipo() == colaborador)
       {
         monitor.get_entidad(0)->perderPV(1);
-        std::cout << "El jugador ha chocado con un colaborador\n";
+        //std::cout << "El jugador ha chocado con un colaborador\n";
       }
       else if (monitor.get_entidad(monitor.getMapa()->casillaOcupada(0))->getSubTipo() == lobo)
       {
@@ -155,7 +155,7 @@ bool actuacionJugador(unsigned char celdaJ_inicial, unsigned char celdaJ_fin, un
 
         // Opcion simplemente choca contra el lobo
         monitor.get_entidad(0)->perderPV(1);
-        std::cout << "El jugador ha chocado con un lobo\n";
+        //std::cout << "El jugador ha chocado con un lobo\n";
       }
       salida = false;
     }
@@ -170,11 +170,11 @@ bool actuacionJugador(unsigned char celdaJ_inicial, unsigned char celdaJ_fin, un
       switch (posibleElAvance){
         case 1: // Muro
           monitor.get_entidad(0)->seAostio();
-          std::cout << "El jugador ha chocado con un muro\n";
+          //std::cout << "El jugador ha chocado con un muro\n";
           break;
 
         case 2: // Precipicio
-          std::cout << "Se cayó por un precipicio\n";
+          //std::cout << "Se cayó por un precipicio\n";
           monitor.get_entidad(0)->resetEntidad();
           monitor.get_entidad(0)->setHitbox(true);
           monitor.finalizarJuego();
@@ -183,17 +183,17 @@ bool actuacionJugador(unsigned char celdaJ_inicial, unsigned char celdaJ_fin, un
 
         case 3: // Colaborador
           monitor.get_entidad(0)->seAostio();
-          std::cout << "El jugador ha chocado con el colaborador\n";
+          //std::cout << "El jugador ha chocado con el colaborador\n";
           break;
 
         case 4: // aldeano
           monitor.get_entidad(0)->seAostio();
-          std::cout << "El jugador ha chocado con un aldeano\n";
+          //std::cout << "El jugador ha chocado con un aldeano\n";
           break;
 
         case 5: // lobo
           monitor.get_entidad(0)->seAostio();
-          std::cout << "El jugador ha chocado con un lobo\n";
+          //std::cout << "El jugador ha chocado con un lobo\n";
           break;
       }
 
@@ -304,7 +304,7 @@ bool actuacionJugador(unsigned char celdaJ_inicial, unsigned char celdaJ_fin, un
       monitor.get_entidad(1)->SetActionSent(act_CLB_WALK);
     else
     {
-      std::cout << "Envío de orden act_CLB_WALK al colaborador fuera de distancia\n";
+      //std::cout << "Envío de orden act_CLB_WALK al colaborador fuera de distancia\n";
     }
     salida = true;
     break;
@@ -315,7 +315,7 @@ bool actuacionJugador(unsigned char celdaJ_inicial, unsigned char celdaJ_fin, un
       monitor.get_entidad(1)->SetActionSent(act_CLB_TURN_SR);
     else
     {
-      std::cout << "Envío de orden act_CLB_TURN_SR al colaborador fuera de distancia\n";
+      //std::cout << "Envío de orden act_CLB_TURN_SR al colaborador fuera de distancia\n";
     }
     salida = true;
     break;
@@ -393,7 +393,7 @@ bool actuacionNPC(unsigned int entidad, unsigned char celda, Action accion, unsi
           //std::cout << "El colaborador ha chocado con un muro\n";
           break;
         case 'P': // Precipicio
-          std::cout << "Se cayó por un precipicio el colaborador\n";
+          //std::cout << "Se cayó por un precipicio el colaborador\n";
           monitor.get_entidad(1)->resetEntidad();
           monitor.get_entidad(1)->setHitbox(true);
           monitor.finalizarJuego();
@@ -479,13 +479,13 @@ bool actuacionNPC(unsigned int entidad, unsigned char celda, Action accion, unsi
           switch (agente)
           {
           case aldeano:
-            std::cout << "El colaborador reiniciado por chocar contra un aldeano\n";
+            //std::cout << "El colaborador reiniciado por chocar contra un aldeano\n";
             break;
           case jugador_:
-            std::cout << "El colaborador reiniciado por chocar contra el jugador\n";
+            //std::cout << "El colaborador reiniciado por chocar contra el jugador\n";
             break;
           case lobo:
-            std::cout << "El colaborador reiniciado por chocar contra un lobo\n";
+            //std::cout << "El colaborador reiniciado por chocar contra un lobo\n";
             break;
           }
           // Opcion reiniciarse en otro punto del mapa
@@ -553,7 +553,7 @@ bool actuacionNPC(unsigned int entidad, unsigned char celda, Action accion, unsi
       break;*/
 
     case actWHEREIS: // Esta accion para un lobo es empujar equivalente a un actPUSH
-      std::cout << "Recibido un empujón por un lobo\n";
+      //std::cout << "Recibido un empujón por un lobo\n";
       bool esta_jugador_delante = monitor.getMapa()->casillaOcupada(entidad) == 0;
       monitor.get_entidad(0)->seAostio();
       if (esta_jugador_delante)
@@ -564,7 +564,7 @@ bool actuacionNPC(unsigned int entidad, unsigned char celda, Action accion, unsi
             monitor.getMapa()->getCelda(casilla.first, casilla.second) != 'P')
           if (aleatorio(1) == 0)
           { // Solo ocurre la mitad de las veces que el lobo lo intenta.
-            std::cout << "\tEl empujón ha sido efectivo\n";
+            //std::cout << "\tEl empujón ha sido efectivo\n";
             monitor.get_entidad(0)->setPosicion(casilla.first, casilla.second);
             monitor.get_entidad(0)->Increment_Empujones();
             monitor.get_entidad(entidad)->giroIzq();
@@ -784,12 +784,12 @@ void lanzar_motor_juego2(MonitorJuego &monitor)
 
   if (monitor.mostrarResultados() and monitor.getLevel() < 2)
   {
-    std::cout << "Longitud del camino: " << 2999 - monitor.get_entidad(0)->getInstantesPendientes() << endl;
+    //std::cout << "Longitud del camino: " << 2999 - monitor.get_entidad(0)->getInstantesPendientes() << endl;
     monitor.setMostrarResultados(false);
   }
   else if (monitor.mostrarResultados() and monitor.getLevel() < 4)
   {
-    std::cout << "Coste de Bateria: " << 3000 - monitor.get_entidad(0)->getBateria() << endl;
+    //std::cout << "Coste de Bateria: " << 3000 - monitor.get_entidad(0)->getBateria() << endl;
     monitor.setMostrarResultados(false);
   }
   else if (monitor.mostrarResultados())

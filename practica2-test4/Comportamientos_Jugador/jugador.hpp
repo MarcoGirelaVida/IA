@@ -124,13 +124,18 @@ class ComportamientoJugador : public Comportamiento {
       reset();
 
       umbral_porcentaje_bateria_maximo = 1;
-      umbral_porcentaje_bateria = 0.75;
+      umbral_porcentaje_bateria = 0.85;
       umbral_ciclos_recarga = 0.2;
       umbral_vida = 0.1;
+      ratio_bateria_vida = 0.5;
 
       umbral_porcentaje_bateria *= mapaResultado.size() / 100.0; 
       umbral_ciclos_recarga *= mapaResultado.size()*20.0;
       umbral_vida *= mapaResultado.size()*20.0;
+
+      coste_medio_mapa = 1;
+      coste_total_mapa = 1;
+      casillas_descubiertas = 1;
     }
     ComportamientoJugador(std::vector< std::vector< unsigned char> > mapaR) : Comportamiento(mapaR),
     hayPlan(false), paso(0), hijos_explorados(0), nodos_abiertos(0), nodos_cerrados(0), consumo_total_bateria(0), ultima_accion(actIDLE)
@@ -141,7 +146,7 @@ class ComportamientoJugador : public Comportamiento {
     ~ComportamientoJugador(){}
 
   private:
-    size_t hijos_explorados, nodos_abiertos, nodos_cerrados, consumo_total_bateria, paso;
+    size_t hijos_explorados, nodos_abiertos, nodos_cerrados, consumo_total_bateria, paso, coste_medio_mapa, coste_total_mapa, casillas_descubiertas;
     estado c_state;
     ubicacion goal;
     queue<Action> plan, plan_colaborador;
@@ -156,7 +161,8 @@ class ComportamientoJugador : public Comportamiento {
     }
     Action ultima_accion;
     bool ubicado, buscando_recargador, recargando, colaborador_encontrado;
-    float umbral_porcentaje_bateria, umbral_porcentaje_bateria_maximo, umbral_ciclos_recarga, umbral_vida;
+    float umbral_porcentaje_bateria, umbral_porcentaje_bateria_maximo, umbral_ciclos_recarga, umbral_vida, ratio_bateria_vida;
+    float x1, x2, x3, x4, x5, output, sigmoid_function;
     unsigned short ciclos_desde_ultima_recarga;
     queue<ubicacion> recargadores;
     //queue<pair<ubicacion, unsigned char>> casillas_agentes;

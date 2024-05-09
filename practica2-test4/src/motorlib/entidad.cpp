@@ -92,7 +92,7 @@ unsigned int Entidad::getObjFil(int pos)
     return destino[2 * pos];
   else
   {
-    std::cout << "Error en getObjFil: intento de acceso a una posición de objetivo que no existe\n";
+    //std::cout << "Error en getObjFil: intento de acceso a una posición de objetivo que no existe\n";
     exit(1);
   }
 }
@@ -103,7 +103,7 @@ unsigned int Entidad::getObjCol(int pos)
     return destino[2 * pos + 1];
   else
   {
-    std::cout << "Error en getObjFil: intento de acceso a una posición de objetivo que no existe\n";
+    //std::cout << "Error en getObjFil: intento de acceso a una posición de objetivo que no existe\n";
     exit(1);
   }
 }
