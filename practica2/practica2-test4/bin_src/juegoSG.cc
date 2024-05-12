@@ -67,7 +67,7 @@ int main(int argc, char **argv)
     {
       if (mapAux[atoi(argv[4])][atoi(argv[5])] == 'P' or mapAux[atoi(argv[4])][atoi(argv[5])] == 'M')
       {
-        cout << "Posicion (" << argv[4] << "," << argv[5] << ") no es de tipo válido para el jugador" << endl;
+        //cout << "Posicion (" << argv[4] << "," << argv[5] << ") no es de tipo válido para el jugador" << endl;
         return 0;
       }
     }
@@ -77,7 +77,7 @@ int main(int argc, char **argv)
     {
       if (mapAux[atoi(argv[7])][atoi(argv[8])] == 'P' or mapAux[atoi(argv[7])][atoi(argv[8])] == 'M')
       {
-        cout << "Posicion (" << argv[7] << "," << argv[8] << ") no es de tipo válido para el colaborador" << endl;
+        //cout << "Posicion (" << argv[7] << "," << argv[8] << ") no es de tipo válido para el colaborador" << endl;
         return 0;
       }
     }
@@ -89,7 +89,7 @@ int main(int argc, char **argv)
       // Reviso si es una posicion valida
       if (mapAux[atoi(argv[i])][atoi(argv[i + 1])] == 'P' and mapAux[atoi(argv[i])][atoi(argv[i + 1])] == 'M')
       {
-        cout << "Posicion (" << argv[i] << "," << argv[i + 1] << ") no es de tipo válido para el objetivo" << endl;
+        //cout << "Posicion (" << argv[i] << "," << argv[i + 1] << ") no es de tipo válido para el objetivo" << endl;
       }
       listo.push_back(pair<int, int>(atoi(argv[i]), atoi(argv[i + 1])));
       i += 2;
@@ -98,8 +98,6 @@ int main(int argc, char **argv)
     monitor.setListObj(listo);
 
     monitor.inicializar(atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), atoi(argv[7]), atoi(argv[8]), atoi(argv[9]), atoi(argv[2]));
-    monitor.get_entidad(0)->setOrientacion(static_cast<Orientacion>(atoi(argv[6])));
-    monitor.get_entidad(0)->setBateria(3000);
     monitor.get_entidad(0)->umbral_porcentaje_bateria_maximo = stof(argv[argc-4]);
     //cerr << "Umbral porcentaje bateria maximo: " << stof(argv[argc-4]) << endl;
     monitor.get_entidad(0)->umbral_porcentaje_bateria = stof(argv[argc-3]);
@@ -108,6 +106,11 @@ int main(int argc, char **argv)
     //cerr << "Umbral ciclos recarga: " << stof(argv[argc-2]) << endl;
     monitor.get_entidad(0)->umbral_vida = stof(argv[argc-1]);
     //cerr << "Umbral vida: " << stof(argv[argc-1])  << endl;
+    //monitor.get_entidad(0)->ratio_bateria_vida = stof(argv[argc-1]);
+
+
+    monitor.get_entidad(0)->setOrientacion(static_cast<Orientacion>(atoi(argv[6])));
+    monitor.get_entidad(0)->setBateria(3000);
     //monitor.get_entidad(0)->Cogio_Bikini(false);
     //monitor.get_entidad(0)->Cogio_Zapatillas(false);
     monitor.get_entidad(1)->setOrientacion(static_cast<Orientacion>(atoi(argv[9])));

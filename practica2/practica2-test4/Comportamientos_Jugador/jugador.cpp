@@ -276,8 +276,42 @@ void ComportamientoJugador::poner_bordes_en_matriz()
 }
 ubicacion ComportamientoJugador::determinar_objetivo(const Sensores &sensores)
 {
+	//estado estado_falso = c_state;
+	//for (size_t i = 0; i < mapaResultado.size(); i++)
+	//{
+	//	for(size_t j = 0; j < mapaResultado.size(); j++)
+	//	{
+	//		if (mapaResultado[i][j] == '?' or mapaResultado[i][j] == 'P' or mapaResultado[i][j] == 'M')
+	//			continue;
+	//		estado_falso.jugador = {(int) i, (int) j, norte};
+	//		coste_total_mapa += coste_accion_total(actWALK, estado_falso);
+	//		casillas_descubiertas++;
+	//	}
+	//}
+	//
+	//coste_medio_mapa = coste_total_mapa / casillas_descubiertas;
+	//x1 = sensores.umbral_porcentaje_bateria_maximo;
+	//x2 = sensores.umbral_porcentaje_bateria;
+	////cerr << "X1: " << x1 << endl;
+	x1 = 0.75;
+	x2 = 650;
+	//x2 *= 2000.0;
+	//cerr << "X2: " << x2 << endl;
+	//x3 = sensores.umbral_ciclos_recarga;
+	//x4 = sensores.umbral_vida;
+	//x5 = sensores.ratio_bateria_vida;
+	//ubicacion recargador_cercano;
+	//if (!recargadores.empty())
+	//{
+	//	recargador_cercano = recargador_mas_cercano();
+	//	float distancia_recargador_mas_cercano = distancia_chebyshev(c_state.jugador, recargador_cercano);
+	//	float distancia_objetivo = distancia_chebyshev(c_state.jugador, goal);
+	//	output = x1*((sensores.vida/sensores.bateria)/(3000)) + x2*((mapaResultado.size()-30)/(100-30)) + x3*((coste_medio_mapa-1)/(150-1)) + x4*((distancia_recargador_mas_cercano/distancia_objetivo)/(300));
+	//	sigmoid_function = 1/(1+exp(-output));
+	//}
+
 	ubicacion objetivo = {0, 0, norte};
-	if (hay_que_recargar(sensores.bateria, sensores.vida) and !recargadores.empty())
+	if (!recargadores.empty() and static_cast<float>(((float) sensores.bateria / (float) sensores.vida)) <= (x1)  and (sensores.vida >= x2))
 	{
 		objetivo = recargador_mas_cercano();
 		buscando_recargador = true;
@@ -310,6 +344,12 @@ void ComportamientoJugador::registrar_sensor_terreno(const Sensores &sensor)
 	for (size_t i = 0; i < 16; i++)
 	 {
 		ubicacion ub = traductor_posicion(c_state.jugador, vector_pos[i].first, vector_pos[i].second);
+		if (mapaResultado[ub.f][ub.c] == '?')
+		{
+			coste_total_mapa += sensor.terreno[i];
+			casillas_descubiertas++;
+			coste_medio_mapa = coste_total_mapa / casillas_descubiertas;
+		}
 		mapaResultado[ub.f][ub.c] = sensor.terreno[i];
 		//if (sensor.agentes[i] != '_' && sensor.agentes[i] != 'j')
 		//	casillas_agentes.push(make_pair(ub, sensor.agentes[i]));
@@ -376,19 +416,16 @@ void ComportamientoJugador::registrar_estado(const Sensores &sensores, const Act
 /*---------------------------------------------------------------------------------------------*/
 
 	// Si estoy en una casilla de recarga, compruebo si debo seguir recargando
+	x2 = sensores.umbral_porcentaje_bateria;
+	x2 *= 2000.0;
 	if (sensores.terreno[0] == 'X')
-		if (!(recargando = ((sensores.bateria / 3000.0) < umbral_porcentaje_bateria_maximo) and (sensores.vida >= umbral_vida)))
+		if (!(recargando = ((sensores.bateria / 3000.0) < 1) and (sensores.vida >= x2)))
 			ciclos_desde_ultima_recarga = 0;
 
 /*---------------------------------------------------------------------------------------------*/
 }
 Action ComportamientoJugador::think(Sensores sensores)
 {
-	umbral_ciclos_recarga = sensores.umbral_ciclos_recarga;
-	umbral_vida = sensores.umbral_vida;
-	umbral_porcentaje_bateria = sensores.umbral_porcentaje_bateria;
-	umbral_porcentaje_bateria_maximo = sensores.umbral_porcentaje_bateria_maximo;
-
 	if(sensores.nivel == 4 and !ubicado)	{ultima_accion = actWHEREIS; ubicado = true; return actWHEREIS;}
 
 	// Actualizo el estado actual y recargo si debo seguir recargando

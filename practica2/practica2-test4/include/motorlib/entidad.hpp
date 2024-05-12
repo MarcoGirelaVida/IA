@@ -26,7 +26,7 @@ enum SubTipo
 class Entidad
 {
 public:
-  float umbral_porcentaje_bateria_maximo, umbral_porcentaje_bateria, umbral_ciclos_recarga, umbral_vida;
+  float umbral_porcentaje_bateria_maximo, umbral_porcentaje_bateria, umbral_ciclos_recarga, umbral_vida, ratio_bateria_vida;
 private:
   Tipo tipo;
   SubTipo subtipo;

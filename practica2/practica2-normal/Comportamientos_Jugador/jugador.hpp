@@ -124,9 +124,9 @@ class ComportamientoJugador : public Comportamiento {
       reset();
 
       umbral_porcentaje_bateria_maximo = 1;
-      umbral_porcentaje_bateria = 0.75;
-      umbral_ciclos_recarga = 0.2;
-      umbral_vida = 0.1;
+      umbral_porcentaje_bateria = 0.48538461538461538462;
+      umbral_ciclos_recarga = 0.14615384615384615386;
+      umbral_vida = 0.17307692307692307695;
 
       umbral_porcentaje_bateria *= mapaResultado.size() / 100.0; 
       umbral_ciclos_recarga *= mapaResultado.size()*20.0;

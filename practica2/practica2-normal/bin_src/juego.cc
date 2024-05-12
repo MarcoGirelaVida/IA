@@ -22,7 +22,7 @@ int main(int argc, char **argv)
     argumentos.ubicacion_mapa = argv[1];
     if (!fileExists(argumentos.ubicacion_mapa))
     {
-      std::cout << "El mapa no existe\n";
+      //std::cout << "El mapa no existe\n";
       exit(1);
     }
     argumentos.semilla = atoi(argv[2]);
