@@ -1,0 +1,57 @@
+actualizar_costes(estado)
+{
+    return {min(coste, coste_real) + heuristica(inicio), min(coste, coste_real);}
+}
+
+nodo
+{
+    estado
+    coste
+    coste_real
+}
+
+inicializar
+{
+    priority_queue<nodo> frontera.clear;
+    km = 0;
+    for all estado in estados do
+    {
+        coste[estado] = infinito;
+        coste_real[estado] = infinito;
+    }
+    estado_objetivo.coste_real = 0
+    frontera.insert(estado_objetivo, {heuristica(inicio), 0});
+}
+
+actualizar_vertice(nodo)
+{
+    if (coste != coste_real) and (nodo in frontera)
+    {
+        frontera.erase(nodo);
+        nodo.coste = actualizar_costes(nodo.estado);
+        frontera.insert(nodo);
+    }
+    else if (coste != coste_real and nodo not in frontera)
+    {
+        nodo.coste = actualizar_costes(nodo.estado);
+        frontera.insert(nodo);
+    }
+    else if (coste == coste_real and nodo in frontera)
+    {
+        frontera.erase(nodo);
+    }
+}
+
+buscar_camino_mas_corto
+{
+    while (frontera.top.costes < costes(inicio)) or (coste_real(inicio) > coste(inico))
+    {
+        nodo_actual = frontera.top;
+        k_old = frontera.top.costes;
+        k_new = actualizar_costes(nodo_actual.estado);
+
+        if (k_old < k_new)
+            frontera.erase(nodo_actual);
+            frontera.insert(nodo_actual, {k_new});
+    }
+}
