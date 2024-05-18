@@ -3,11 +3,23 @@
 
 # include "Attributes.h"
 # include "Player.h"
+#include <limits>
+#include <queue>
+#include <utility>
+#include <vector>
+using namespace std;
 
+struct movimiento
+{
+    color c;
+    int id;
+    int dado;
+};
 class AIPlayer: public Player{
     protected:
         //Id identificativo del jugador
         const int id;
+
     public:
         /**
          * @brief Constructor de un objeto AIPlayer
@@ -72,9 +84,28 @@ class AIPlayer: public Player{
         static double ValoracionTest(const Parchis &estado, int jugador);
 
         /**
+         * @brief Heurística óptima.
+         * 
+         * @param estado Instancia de Parchis con el estado actual de la partida.
+         * @return nota asignada al estado
+         */
+        static double evaluacion_optima(const Parchis &estado, int jugador);
+
+        /**
          * @brief Propuesta de declaración de la función poda alfa-beta.
          * La propuesta es solo sugerencia, los parámetros de la declaración podrían variar.
          */
-        //double Poda_AlfaBeta(const Parchis &actual, int jugador, int profundidad, int profundidad_max, color &c_piece, int &id_piece, int &dice, double alpha, double beta, double (*heuristic)(const Parchis &, int)) const;
+        double alpha_beta(const Parchis &actual, double alpha, double beta, unsigned char profundidad_restante) const;
+        movimiento alpha_beta_raiz(const Parchis &actual) const;
+
+        struct ordenador_estados
+        {
+            bool operator()(const Parchis &a, const Parchis &b) const;
+            bool operator()(const std::pair<Parchis, movimiento> &a, const std::pair<Parchis, movimiento> &b) const;
+        };
+        queue<Parchis> get_hijos_cola(const Parchis &estado) const;
+        queue<pair<Parchis, movimiento>> get_hijos_cola_raiz(const Parchis &estado) const;
+        priority_queue<pair<Parchis, movimiento>, vector<pair<Parchis, movimiento>>, ordenador_estados> get_hijos_ordenados_raiz(const Parchis &estado) const;
+        priority_queue<Parchis, vector<Parchis>, ordenador_estados> get_hijos_ordenados(const Parchis &estado) const;
 };
 #endif
