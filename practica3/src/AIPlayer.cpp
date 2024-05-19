@@ -100,11 +100,11 @@ movimiento AIPlayer::alpha_beta_raiz(const Parchis &actual) const
 
     //priority_queue<pair<Parchis, movimiento>, vector<pair<Parchis, movimiento>>, AIPlayer::ordenador_estados> hijos = get_hijos_ordenados_raiz(actual);
     queue<pair<Parchis, movimiento>> hijos = get_hijos_cola_raiz(actual);
-    if (hijos.size() == 1) return hijos.front().second; //return hijos.top().second; 
+    if (hijos.size() == 1) return hijos.front().second;
 
     while (!hijos.empty())
     {
-        pair<Parchis, movimiento> hijo = hijos.front(); //hijos.top(); 
+        pair<Parchis, movimiento> hijo = hijos.front();
         hijos.pop();
 
         double nota = actual.getCurrentPlayerId() != hijo.first.getCurrentPlayerId() ? -alpha_beta(hijo.first, -beta, -alpha, PROFUNDIDAD_ALFABETA - 1) : alpha_beta(hijo.first, alpha, beta, PROFUNDIDAD_ALFABETA - 1);
@@ -117,15 +117,21 @@ movimiento AIPlayer::alpha_beta_raiz(const Parchis &actual) const
     return mejor_movimiento;
 }
 
+// Alpha = Lo mínimo que tengo que conseguir para que sea útil
+// Beta  = Lo máximo que puedo conseguir en esta rama
+// Si beta es menor que alpha, no me interesa seguir por esta rama
+// Cuanto mayor sea alpha (haya encontrado mejores movimientos), más posibilidades de que un beta se pase y podes
+// Cuando menor sea un beta (haya encontrado movimientos peores), más posibilidades de que aparezca una actualización de alpha que lo sobrepase
+// Si la nota de un nodo es mayor que beta me da igual porque aunque sea mejor nunca me voy a meter por ahí, asi que devuelvo beta
 double AIPlayer::alpha_beta(const Parchis &actual, double alpha, double beta, unsigned char profundidad_restante) const
 {
     if (profundidad_restante == JUGADOR_PRINCIPAL) return ValoracionTest(actual, actual.getCurrentPlayerId());
     
-    priority_queue<Parchis, vector<Parchis>, AIPlayer::ordenador_estados> hijos = get_hijos_ordenados(actual);
-    //queue<Parchis> hijos = get_hijos_cola(actual);
+    //priority_queue<Parchis, vector<Parchis>, AIPlayer::ordenador_estados> hijos = get_hijos_ordenados(actual);
+    queue<Parchis> hijos = get_hijos_cola(actual);
     while (!hijos.empty())
     {
-        Parchis hijo = hijos.top(); //hijos.front();
+        Parchis hijo = hijos.front();
         hijos.pop();
 
         double nota = actual.getCurrentPlayerId() != hijo.getCurrentPlayerId() ? -alpha_beta(hijo, -beta, -alpha, profundidad_restante - 1) : alpha_beta(hijo, alpha, beta, profundidad_restante - 1);
