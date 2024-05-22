@@ -1,0 +1,53 @@
+{
+    // Use IntelliSense para saber los atributos posibles.
+    // Mantenga el puntero para ver las descripciones de los existentes atributos.
+    // Para más información, visite: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(gdb) Heuristica 0 vs Heristica 0",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/IA/practica3/build/ParchisGame",
+            "args": ["--p1", "AI", "0", "Marco_0", "--p2", "AI", "0", "Marco_1"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/IA/practica3"
+        },
+        {
+            "name": "(gdb) Ninja 0 vs Heristica 1",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/IA/practica3/build/ParchisGame",
+            "args": ["--p1", "Ninja", "0", "Ninja_0", "--p2", "AI", "1", "Marco_1"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/IA/practica3"
+        },
+        {
+            "name": "(gdb) Ninja 0 vs Heristica optima",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/IA/practica3/build/ParchisGame",
+            "args": ["--p1", "Ninja", "0", "Ninja_0", "--p2", "AI", "10", "Marco_1"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/IA/practica3"
+        },
+        {
+            "name": "(gdb) Heristica optima vs Ninja 1",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/IA/practica3/build/ParchisGame",
+            "args": ["--p1", "AI", "10", "Heuristica_1", "--p2", "Ninja", "1", "Ninja_1"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/IA/practica3"
+        },
+        {
+            "name": "(gdb) Ninja vs Ninja",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/IA/practica3/build/ParchisGame",
+            "args": ["--p1", "Ninja", "0", "Ninja_0_0", "--p2", "Ninja", "0", "Ninja_0_1"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/IA/practica3"
+        },
+    ]
+}

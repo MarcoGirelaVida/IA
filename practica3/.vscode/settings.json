@@ -1,0 +1,4 @@
+{
+    "cmake.sourceDirectory": "${workspaceFolder}/IA/practica3",
+    "cmake.buildDirectory": "${workspaceFolder}/IA/practica3/build"
+}

@@ -7,6 +7,7 @@
 #include <queue>
 #include <utility>
 #include <vector>
+#include <unordered_set>
 using namespace std;
 
 struct movimiento
@@ -90,6 +91,7 @@ class AIPlayer: public Player{
          * @return nota asignada al estado
          */
         static double evaluacion_optima(const Parchis &estado, int jugador);
+        static double evaluacion_solo_distancias(const Parchis &estado, int jugador);
 
         /**
          * @brief Propuesta de declaración de la función poda alfa-beta.
@@ -107,5 +109,9 @@ class AIPlayer: public Player{
         queue<pair<Parchis, movimiento>> get_hijos_cola_raiz(const Parchis &estado) const;
         priority_queue<pair<Parchis, movimiento>, vector<pair<Parchis, movimiento>>, ordenador_estados> get_hijos_ordenados_raiz(const Parchis &estado) const;
         priority_queue<Parchis, vector<Parchis>, ordenador_estados> get_hijos_ordenados(const Parchis &estado) const;
+        static unordered_set<int> piezas_comibles(const Parchis &estado, const int jugador);
+        static double media_dados_disponibles(const Parchis &estad, const int jugador);
+        static double mejor_dado_disponible(const Parchis &estado, const int jugador);
+        static vector<double> medias_avance_colores(const Parchis &estado);
 };
 #endif
