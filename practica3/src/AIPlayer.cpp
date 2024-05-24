@@ -147,7 +147,7 @@ movimiento AIPlayer::alpha_beta_raiz(const Parchis &actual) const
 // Si la nota de un nodo es mayor que beta me da igual porque aunque sea mejor nunca me voy a meter por ahí, asi que devuelvo beta
 double AIPlayer::alpha_beta(const Parchis &actual, double alpha, double beta, unsigned char profundidad_restante) const
 {
-    if (profundidad_restante == 0) return heuristica(actual, actual.getCurrentPlayerId());
+    if (profundidad_restante == 0 or actual.gameOver()) return heuristica(actual, actual.getCurrentPlayerId());
     
     //priority_queue<Parchis, vector<Parchis>, AIPlayer::ordenador_estados> hijos = get_hijos_ordenados(actual);
     queue<Parchis> hijos = get_hijos_cola(actual);
@@ -232,7 +232,7 @@ double AIPlayer::evaluacion_solo_distancias(const Parchis &estado, int jugador)
     // Calculo la media de las distancias a la meta de cada color
     vector<color> my_colors = estado.getPlayerColors(jugador);
     vector<color> op_colors = estado.getPlayerColors(oponente);
-    vector<double> medias_distancias_colores(4, 0);
+    vector<double> media_avance_color(4, 0);
     double puntuacion_distancia_jugador = 0, puntuacion_distancia_oponente = 0;
 
     for (int c = 0; c < 4; c++)
@@ -240,22 +240,22 @@ double AIPlayer::evaluacion_solo_distancias(const Parchis &estado, int jugador)
         for (int i = 0; i < num_pieces; i++)
         {
             //cerr << "Distancia a la meta de la ficha " << i << " de color " << c << ": " << estado.distanceToGoal((color) c, i) << endl;
-            medias_distancias_colores[c] += estado.distanceToGoal((color) c, i);
+            media_avance_color[c] += estado.distanceToGoal((color) c, i);
         }
-        medias_distancias_colores[c] /= num_pieces;
-        //cerr << "Media color " << c << ": " << medias_distancias_colores[c] << endl;
+        media_avance_color[c] /= num_pieces;
+        //cerr << "Media color " << c << ": " << media_avance_color[c] << endl;
     }
 
     // JUGADOR
-    double media_color_adelantado_jug = NUM_TOTAL_CASILLAS - min(medias_distancias_colores[my_colors[0]], medias_distancias_colores[my_colors[1]]);
-    double media_color_atrasado_jug = NUM_TOTAL_CASILLAS - max(medias_distancias_colores[my_colors[0]], medias_distancias_colores[my_colors[1]]);
+    double media_color_adelantado_jug = NUM_TOTAL_CASILLAS - min(media_avance_color[my_colors[0]], media_avance_color[my_colors[1]]);
+    double media_color_atrasado_jug = NUM_TOTAL_CASILLAS - max(media_avance_color[my_colors[0]], media_avance_color[my_colors[1]]);
     puntuacion_distancia_jugador = media_color_adelantado_jug*PESO_COLOR_ADELANTADO + media_color_atrasado_jug*PENALIZACION_COLOR_ATRASADO;
     //cerr << "Media jugador adelantado: " << media_color_adelantado_jug << " Media jugador atrasado: " << media_color_atrasado_jug << endl;
     //cerr << "Puntuacion distancia jugador: " << puntuacion_distancia_jugador << endl;
 
     // OPONENTE
-    double media_color_adelantado_opo = NUM_TOTAL_CASILLAS - min(medias_distancias_colores[op_colors[0]], medias_distancias_colores[op_colors[1]]);
-    double media_color_atrasado_opo = NUM_TOTAL_CASILLAS - max(medias_distancias_colores[op_colors[0]], medias_distancias_colores[op_colors[1]]);
+    double media_color_adelantado_opo = NUM_TOTAL_CASILLAS - min(media_avance_color[op_colors[0]], media_avance_color[op_colors[1]]);
+    double media_color_atrasado_opo = NUM_TOTAL_CASILLAS - max(media_avance_color[op_colors[0]], media_avance_color[op_colors[1]]);
     puntuacion_distancia_oponente = media_color_adelantado_opo*PESO_COLOR_ADELANTADO + media_color_atrasado_opo*PENALIZACION_COLOR_ATRASADO;
     //cerr << "Media oponente adelantado: " << media_color_adelantado_opo << " Media oponente atrasado: " << media_color_atrasado_opo << endl;
     //cerr << "Puntuacion distancia oponente: " << puntuacion_distancia_oponente << endl;
@@ -282,26 +282,32 @@ double AIPlayer::evaluacion_optima(const Parchis &estado, int jugador)
     else if (ganador == oponente) return pierde;
 
     // -------------------------------------------------------------------------------------------
-    // EN CASO DE QUE ALGUNO TENGA ENERGIA MÁXIMA
-
-    if (estado.getPower(oponente) == 100) return gana - 1;
-    else if (estado.getPower(jugador) == 100) return pierde - 1;
+    // SUMO LOS PUNTOS DE LAS CASILLAS DE META
+    
+    double extra_por_ficha_en_meta = gana / num_pieces;
+    for (int i = 0; i < num_pieces; i++)
+    {
+        if (estado.getBoard().getPiece(my_colors[0], i).get_box().type == goal)
+            puntuacion_final += extra_por_ficha_en_meta;
+        if (estado.getBoard().getPiece(my_colors[1], i).get_box().type == goal)
+            puntuacion_final += extra_por_ficha_en_meta;
+        if (estado.getBoard().getPiece(op_colors[0], i).get_box().type == goal)
+            puntuacion_final -= extra_por_ficha_en_meta;
+        if (estado.getBoard().getPiece(op_colors[1], i).get_box().type == goal)
+            puntuacion_final -= extra_por_ficha_en_meta;
+    }
 
     // -------------------------------------------------------------------------------------------
     // PUNTUACIÓN SEGÚN AVANCE
 
-    double puntuacion_distancia_jugador = 0, puntuacion_distancia_oponente = 0;
-    vector<double> medias_distancias_colores = medias_avance_colores(estado);
+    vector<double> media_avance_color = medias_avance_colores(estado);
+    color color_adelantado_jug = media_avance_color[my_colors[0]] < media_avance_color[my_colors[1]] ? my_colors[0] : my_colors[1];
+    color color_atrasado_jug = color_adelantado_jug == my_colors[0] ? my_colors[1] : my_colors[0];
+    color color_adelantado_opo = media_avance_color[op_colors[0]] < media_avance_color[op_colors[1]] ? op_colors[0] : op_colors[1];
+    color color_atrasado_opo = color_adelantado_opo == op_colors[0] ? op_colors[1] : op_colors[0];
 
-    // PUNTUACION JUGADOR SEGUN DISTANCIA
-    double media_color_adelantado_jug = max(medias_distancias_colores[my_colors[0]], medias_distancias_colores[my_colors[1]]);
-    double media_color_atrasado_jug = min(medias_distancias_colores[my_colors[0]], medias_distancias_colores[my_colors[1]]);
-    puntuacion_distancia_jugador = media_color_adelantado_jug*PESO_COLOR_ADELANTADO + media_color_atrasado_jug*PENALIZACION_COLOR_ATRASADO;
-
-    // PUNTUACION OPONENTE SEGUN DISTANCIA
-    double media_color_adelantado_opo = max(medias_distancias_colores[op_colors[0]], medias_distancias_colores[op_colors[1]]);
-    double media_color_atrasado_opo = min(medias_distancias_colores[op_colors[0]], medias_distancias_colores[op_colors[1]]);
-    puntuacion_distancia_oponente = media_color_adelantado_opo*PESO_COLOR_ADELANTADO + media_color_atrasado_opo*PENALIZACION_COLOR_ATRASADO;
+    double puntuacion_distancia_jugador = media_avance_color[color_adelantado_jug]*PESO_COLOR_ADELANTADO + media_avance_color[color_atrasado_jug]*PENALIZACION_COLOR_ATRASADO;
+    double puntuacion_distancia_oponente = media_avance_color[color_adelantado_opo]*PESO_COLOR_ADELANTADO + media_avance_color[color_atrasado_opo]*PENALIZACION_COLOR_ATRASADO;
 
     puntuacion_final = (puntuacion_distancia_jugador - puntuacion_distancia_oponente);
 
@@ -316,10 +322,10 @@ double AIPlayer::evaluacion_optima(const Parchis &estado, int jugador)
     // -------------------------------------------------------------------------------------------
     // PUNTUACION POR DADOS DISPONIBLES
 
-    //const double media_dados_disponibles_jug = media_dados_disponibles(estado, jugador);
-    //const double media_dados_disponibles_opo = media_dados_disponibles(estado, oponente);
-//
-    //puntuacion_final += (media_dados_disponibles_jug - media_dados_disponibles_opo);
+    const double media_dados_disponibles_jug = media_dados_disponibles(estado, jugador);
+    const double media_dados_disponibles_opo = media_dados_disponibles(estado, oponente);
+
+    puntuacion_final += (media_dados_disponibles_jug - media_dados_disponibles_opo);
 
     //cerr << "\tMedia dados disponibles jugador: " << media_dados_disponibles_jug << endl;
     //cerr << "\tMedia dados disponibles oponente: " << media_dados_disponibles_opo << endl;
@@ -329,6 +335,12 @@ double AIPlayer::evaluacion_optima(const Parchis &estado, int jugador)
     // -------------------------------------------------------------------------------------------
     // PUNTUACION RIESGO
 
+    vector<double> media_peligro_color = media_peligro_colores(estado);
+
+    double puntuacion_peligro_jugador = media_peligro_color[color_adelantado_jug]*PESO_COLOR_ADELANTADO + media_peligro_color[color_atrasado_jug]*PENALIZACION_COLOR_ATRASADO;
+    double puntuacion_peligro_oponente = media_peligro_color[color_adelantado_opo]*PESO_COLOR_ADELANTADO + media_peligro_color[color_atrasado_opo]*PENALIZACION_COLOR_ATRASADO;
+
+    puntuacion_final = (puntuacion_peligro_jugador - puntuacion_peligro_oponente);
 
     // -------------------------------------------------------------------------------------------
 
@@ -394,7 +406,7 @@ double AIPlayer::mejor_dado_disponible(const Parchis &estado, const int jugador)
 
 vector<double> AIPlayer::medias_avance_colores(const Parchis &estado)
 {
-    vector<double> medias_distancias_colores(4, 0);
+    vector<double> media_avance_color(4, 0);
     unordered_set<int> comibles = piezas_comibles(estado, estado.getCurrentPlayerId());
 
     for (int c = 0; c < 4; c++)
@@ -403,16 +415,59 @@ vector<double> AIPlayer::medias_avance_colores(const Parchis &estado)
         {
             ////cerr << "\t - Avance ficha [" << c << ", " << i << "]: " <<  NUM_TOTAL_CASILLAS - estado.distanceToGoal((color) c, i) << endl;
             if (comibles.find(estado.getBoard().getPiece((color) c, i).get_box().num) == comibles.end())
-                medias_distancias_colores[c] += (NUM_TOTAL_CASILLAS - estado.distanceToGoal((color) c, i));
+                media_avance_color[c] += (NUM_TOTAL_CASILLAS - estado.distanceToGoal((color) c, i));
             else
             {
-                medias_distancias_colores[c] -= 20 + mejor_dado_disponible(estado, estado.getCurrentPlayerId());
+                media_avance_color[c] -= 20 + mejor_dado_disponible(estado, estado.getCurrentPlayerId());
                 //cerr << ">>>>>>>>>>>>>>>> Ficha [" << c << ", " << i << "] es comible" << endl;
             }
         }
-        medias_distancias_colores[c] /= num_pieces;
-        //cerr << "\tMedia color " << c << ": " << medias_distancias_colores[c] << endl;
+        media_avance_color[c] /= num_pieces;
+        //cerr << "\tMedia color " << c << ": " << media_avance_color[c] << endl;
     }
 
-    return medias_distancias_colores;
+    return media_avance_color;
+}
+
+vector<double> AIPlayer::media_peligro_colores(const Parchis &estado)
+{
+    int jugador = estado.getCurrentPlayerId();
+    int oponente = (estado.getCurrentPlayerId()+1) % 2;
+    vector<color> colores_jug = estado.getPlayerColors(jugador);
+    vector<double> media_peligro_color(4, 0);
+    unordered_set<int> comibles = piezas_comibles(estado, jugador);
+
+    for (int c_jug = 0; c_jug < 4; c_jug++)
+    {
+        int jug_actual = c_jug == colores_jug[0] or c_jug == colores_jug[1] ? jugador : oponente;
+        int opo_actual = jug_actual == jugador ? oponente : jugador;
+
+        for (int id_jug = 0; id_jug < num_pieces; id_jug++)
+        {
+            // Si es casilla comible devuelvo su valor íntegro que es lo que voy a perder
+            if (comibles.find(estado.getBoard().getPiece((color) c_jug, id_jug).get_box().num) != comibles.end())
+            {
+                media_peligro_color[c_jug] += NUM_TOTAL_CASILLAS - estado.distanceToGoal((color) c_jug, id_jug);
+            }
+            else
+            {
+                int distancia_enemigo_mas_peligroso = -1;
+                const vector<color> colores_opo = estado.getPlayerColors(opo_actual);
+                for (color c_opo : colores_opo)
+                {
+                    for (int id_opo = 0; id_opo < num_pieces; id_opo++)
+                    {
+                        int distancia_enemigo_i = estado.distanceBoxtoBox(c_opo, estado.getBoard().getPiece(c_opo, id_opo).get_box(), c_jug, estado.getBoard().getPiece((color) c_jug, id_jug).get_box());
+                        if (distancia_enemigo_mas_peligroso > distancia_enemigo_i)
+                            distancia_enemigo_mas_peligroso = distancia_enemigo_i;
+                    }
+                }
+                if (distancia_enemigo_mas_peligroso != -1)
+                    media_peligro_color[c_jug] += (NUM_TOTAL_CASILLAS - estado.distanceToGoal((color) c_jug, id_jug)) * // RATIO * distancia_mas_peligroso
+            }
+        }
+        media_peligro_color[c_jug] /= num_pieces;
+    }
+
+    return media_peligro_color;
 }

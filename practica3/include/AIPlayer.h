@@ -113,5 +113,6 @@ class AIPlayer: public Player{
         static double media_dados_disponibles(const Parchis &estad, const int jugador);
         static double mejor_dado_disponible(const Parchis &estado, const int jugador);
         static vector<double> medias_avance_colores(const Parchis &estado);
+        static vector<double> media_peligro_colores(const Parchis &estado);
 };
 #endif
