@@ -8,11 +8,44 @@ const int num_pieces = 3;
 const int PROFUNDIDAD_MINIMAX = 4;  // Umbral maximo de profundidad para el metodo MiniMax
 const int PROFUNDIDAD_ALFABETA = 6; // Umbral maximo de profundidad para la poda Alfa_Beta
 unsigned char JUGADOR_PRINCIPAL;
-const double PESO_COLOR_ADELANTADO = 1.25;
-const double PENALIZACION_COLOR_ATRASADO = 0.75;
+const double PESO_COLOR_ADELANTADO = 1.5;
+const double PENALIZACION_COLOR_ATRASADO = 1;
 const unsigned char NUM_TOTAL_CASILLAS = 73;
 const unsigned char BENEFICIO_POSESION_DADO_ESPECIAL = 50;
 double (*heuristica)(const Parchis &estado, int jugador);
+
+bool ordenador_estados::operator()(const Parchis &a, const Parchis &b) const
+{
+    if (a.getCurrentPlayerId() == JUGADOR_PRINCIPAL)
+        return heuristica(a, a.getCurrentPlayerId()) > heuristica(b, b.getCurrentPlayerId());
+    else
+        return heuristica(a, a.getCurrentPlayerId()) < heuristica(b, b.getCurrentPlayerId());
+}
+
+bool ordenador_estados::operator()(const pair<Parchis, movimiento> &a, const pair<Parchis, movimiento> &b) const
+{
+    const Parchis& estadoA = a.first;
+    const Parchis& estadoB = b.first;
+    if (estadoA.getCurrentPlayerId() == JUGADOR_PRINCIPAL)
+        return heuristica(estadoA, estadoA.getCurrentPlayerId()) > heuristica(estadoB, estadoB.getCurrentPlayerId());
+    else
+        return heuristica(estadoA, estadoA.getCurrentPlayerId()) < heuristica(estadoB, estadoB.getCurrentPlayerId());
+}
+
+bool ordenador_estados::operator()(const tuple<double, Parchis, movimiento>& a, const tuple<double, Parchis, movimiento>& b) const
+{
+    return get<0>(a) < get<0>(b);
+}
+
+void AIPlayer::print_movimientos(const cola_hijos_raiz &ultimos_mejores_movimientos)
+{
+    cola_hijos_raiz ultimos_mejores_movimientos_tmp = ultimos_mejores_movimientos;
+    while (!ultimos_mejores_movimientos_tmp.empty())
+    {
+        cerr << "\tNota: " << get<0>(ultimos_mejores_movimientos_tmp.top()) << " Accion: " << str(get<2>(ultimos_mejores_movimientos_tmp.top()).c) << " " << get<2>(ultimos_mejores_movimientos_tmp.top()).id << " " << get<2>(ultimos_mejores_movimientos_tmp.top()).dado << endl;
+        ultimos_mejores_movimientos_tmp.pop();
+    }
+}
 
 bool AIPlayer::move(){
     cout << "Realizo un movimiento automatico" << endl;
@@ -40,43 +73,23 @@ void AIPlayer::think(color & c_piece, int & id_piece, int & dice) const
     default: cerr << "Error en la elección de la heurística" << endl; exit(1);
     }
 
-    movimiento mov = alpha_beta_raiz(*actual);
+    cola_hijos_raiz ultimos_mejores_movimientos = get_hijos_orden_dados_raiz(*actual);
+    //for (int i = 6; i <= PROFUNDIDAD_ALFABETA; i++)
+    //{
+    //    cerr << "Profundidad: " << i << endl;
+    //    ultimos_mejores_movimientos = alpha_beta_raiz(*actual, i, ultimos_mejores_movimientos);
+    //    print_movimientos(ultimos_mejores_movimientos);
+    //}
+    //movimiento mov = get<2>(ultimos_mejores_movimientos.top());
 
+    movimiento mov = alpha_beta_raiz(*actual, PROFUNDIDAD_ALFABETA, ultimos_mejores_movimientos);
     c_piece = mov.c;
     id_piece = mov.id;
     dice = mov.dado;
     cout << "Accion: " << str(c_piece) << " " << id_piece << " " << dice << endl;
 }
 
-bool AIPlayer::ordenador_estados::operator()(const Parchis &a, const Parchis &b) const
-{
-    if (a.getCurrentPlayerId() == JUGADOR_PRINCIPAL)
-        return heuristica(a, a.getCurrentPlayerId()) > heuristica(b, b.getCurrentPlayerId());
-    else
-        return heuristica(a, a.getCurrentPlayerId()) < heuristica(b, b.getCurrentPlayerId());
-}
-
-bool AIPlayer::ordenador_estados::operator()(const pair<Parchis, movimiento> &a, const pair<Parchis, movimiento> &b) const
-{
-    const Parchis& estadoA = a.first;
-    const Parchis& estadoB = b.first;
-    if (estadoA.getCurrentPlayerId() == JUGADOR_PRINCIPAL)
-        return heuristica(estadoA, estadoA.getCurrentPlayerId()) > heuristica(estadoB, estadoB.getCurrentPlayerId());
-    else
-        return heuristica(estadoA, estadoA.getCurrentPlayerId()) < heuristica(estadoB, estadoB.getCurrentPlayerId());
-}
-
-priority_queue<pair<Parchis, movimiento>, vector<pair<Parchis, movimiento>>, AIPlayer::ordenador_estados> AIPlayer::get_hijos_ordenados_raiz(const Parchis &estado) const
-{
-    priority_queue<pair<Parchis, movimiento>, vector<pair<Parchis, movimiento>>, ordenador_estados> hijos;
-    ParchisBros hijos_aux = estado.getChildren();
-    for (auto it = hijos_aux.begin(); it != hijos_aux.end(); ++it)
-        hijos.push({*it, {it.getMovedColor(), it.getMovedPieceId(), it.getMovedDiceValue()}});
-
-    return hijos;
-}
-
-priority_queue<Parchis, vector<Parchis>, AIPlayer::ordenador_estados> AIPlayer::get_hijos_ordenados(const Parchis &estado) const
+priority_queue<Parchis, vector<Parchis>, ordenador_estados> AIPlayer::get_hijos_orden_heuristica(const Parchis &estado) const
 {
     priority_queue<Parchis, vector<Parchis>, ordenador_estados> hijos;
     ParchisBros hijos_aux = estado.getChildren();
@@ -86,57 +99,58 @@ priority_queue<Parchis, vector<Parchis>, AIPlayer::ordenador_estados> AIPlayer::
     return hijos;
 }
 
-queue<Parchis> AIPlayer::get_hijos_cola(const Parchis &estado) const
+queue<Parchis> AIPlayer::get_hijos_orden_dados(const Parchis &estado) const
 {
     queue<Parchis> hijos;
     ParchisBros hijos_aux = estado.getChildren();
-    for (const auto &hijo : hijos_aux)
-        hijos.push(hijo);
-
+    for (auto it = hijos_aux.begin(); it != hijos_aux.end(); ++it)
+        hijos.push(*it);
     return hijos;
 }
 
-queue<pair<Parchis, movimiento>> AIPlayer::get_hijos_cola_raiz(const Parchis &estado) const
+cola_hijos_raiz AIPlayer::get_hijos_orden_dados_raiz(const Parchis &estado) const
 {
-    queue<pair<Parchis, movimiento>> hijos;
+    cola_hijos_raiz hijos;
     ParchisBros hijos_aux = estado.getChildren();
     for (auto it = hijos_aux.begin(); it != hijos_aux.end(); ++it)
-        hijos.push({*it, {it.getMovedColor(), it.getMovedPieceId(), it.getMovedDiceValue()}});
+        hijos.push({(double) it.getMovedDiceValue(), (*it), {it.getMovedColor(), it.getMovedPieceId(), it.getMovedDiceValue()}});
 
     return hijos;
 }
 
-movimiento AIPlayer::alpha_beta_raiz(const Parchis &actual) const
+movimiento AIPlayer::alpha_beta_raiz(const Parchis &actual, const unsigned char profundidad, cola_hijos_raiz &ultimos_mejores_movimientos) const
 {
     double alpha = -inf, beta = inf;
     movimiento mejor_movimiento;
-
-    //priority_queue<pair<Parchis, movimiento>, vector<pair<Parchis, movimiento>>, AIPlayer::ordenador_estados> hijos = get_hijos_ordenados_raiz(actual);
-    queue<pair<Parchis, movimiento>> hijos = get_hijos_cola_raiz(actual);
-    if (hijos.size() == 1) return hijos.front().second;
-
-    //cerr << "HIJOS DE LA RAIZ: " << hijos.size() << endl;
-    //queue<pair<Parchis, movimiento>> hijos_aux = hijos;
-    //while (!hijos_aux.empty())
-    //{
-    //    pair<Parchis, movimiento> hijo = hijos_aux.front();
-    //    hijos_aux.pop();
-    //    cerr << "Color: " << str(hijo.second.c) << " Ficha: " << hijo.second.id << " Dado: " << hijo.second.dado << " Heuristica: " << heuristica(hijo.first, hijo.first.getCurrentPlayerId()) << endl;
-    //}
-
-    while (!hijos.empty())
+    ParchisBros hijos = actual.getChildren();
+    for (auto it = hijos.begin(); it != hijos.end(); ++it)
     {
-        pair<Parchis, movimiento> hijo = hijos.front();
-        hijos.pop();
-
-        double nota = actual.getCurrentPlayerId() != hijo.first.getCurrentPlayerId() ? -alpha_beta(hijo.first, -beta, -alpha, PROFUNDIDAD_ALFABETA - 1) : alpha_beta(hijo.first, alpha, beta, PROFUNDIDAD_ALFABETA - 1);
+        double nota = actual.getCurrentPlayerId() != (*it).getCurrentPlayerId() ? -alpha_beta(*it, -beta, -alpha, profundidad - 1) : alpha_beta(*it, alpha, beta, profundidad - 1);
         if (nota > alpha)
         {
-            mejor_movimiento = hijo.second;
             alpha = nota;
+            mejor_movimiento = {it.getMovedColor(), it.getMovedPieceId(), it.getMovedDiceValue()};
         }
+        cerr << "NOTA HIJO: " << nota << " ACCION: " << str(it.getMovedColor()) << " " << it.getMovedPieceId() << " " << it.getMovedDiceValue() << endl;
     }
     return mejor_movimiento;
+
+
+    //cola_hijos_raiz mejores_movimientos;
+//
+    //while (!ultimos_mejores_movimientos.empty())
+    //{
+    //    tuple<double, Parchis, movimiento> hijo = ultimos_mejores_movimientos.top();
+    //    ultimos_mejores_movimientos.pop();
+//
+    //    double nota = actual.getCurrentPlayerId() != get<1>(hijo).getCurrentPlayerId() ? -alpha_beta(get<1>(hijo), -beta, -alpha, profundidad - 1) : alpha_beta(get<1>(hijo), alpha, beta, profundidad - 1);
+    //    if (nota > alpha)
+    //        alpha = nota;
+//
+    //    get<0>(hijo) = nota;
+    //    mejores_movimientos.push(hijo);
+    //}
+    //return mejores_movimientos;
 }
 
 // Alpha = Lo mínimo que tengo que conseguir para que sea útil
@@ -147,17 +161,13 @@ movimiento AIPlayer::alpha_beta_raiz(const Parchis &actual) const
 // Si la nota de un nodo es mayor que beta me da igual porque aunque sea mejor nunca me voy a meter por ahí, asi que devuelvo beta
 double AIPlayer::alpha_beta(const Parchis &actual, double alpha, double beta, unsigned char profundidad_restante) const
 {
-    if (profundidad_restante == 0 or actual.gameOver()) return heuristica(actual, actual.getCurrentPlayerId());
-    
-    //priority_queue<Parchis, vector<Parchis>, AIPlayer::ordenador_estados> hijos = get_hijos_ordenados(actual);
-    queue<Parchis> hijos = get_hijos_cola(actual);
+    if (profundidad_restante == 0 or actual.gameOver())
+        return heuristica(actual, actual.getCurrentPlayerId());
 
-    while (!hijos.empty())
+    ParchisBros hijos = actual.getChildren();
+    for (auto it = hijos.begin(); it != hijos.end(); ++it)
     {
-        Parchis hijo = hijos.front();
-        hijos.pop();
-
-        double nota = actual.getCurrentPlayerId() != hijo.getCurrentPlayerId() ? -alpha_beta(hijo, -beta, -alpha, profundidad_restante - 1) : alpha_beta(hijo, alpha, beta, profundidad_restante - 1);
+        double nota = actual.getCurrentPlayerId() != (*it).getCurrentPlayerId() ? -alpha_beta(*it, -beta, -alpha, profundidad_restante - 1) : alpha_beta(*it, alpha, beta, profundidad_restante - 1);
         if (nota >= beta)
             return beta;
         if (nota > alpha)
@@ -181,14 +191,14 @@ double AIPlayer::ValoracionTest(const Parchis &estado, int jugador)
     else
     {
         // Colores que juega mi jugador y colores del oponente
-        vector<color> my_colors = estado.getPlayerColors(jugador);
-        vector<color> op_colors = estado.getPlayerColors(oponente);
+        vector<color> colores_jug = estado.getPlayerColors(jugador);
+        vector<color> colores_opo = estado.getPlayerColors(oponente);
 
         // Recorro todas las fichas de mi jugador
         int puntuacion_jugador = 0;
-        for (int i = 0; i < my_colors.size(); i++)
+        for (int i = 0; i < colores_jug.size(); i++)
         {
-            color c = my_colors[i];
+            color c = colores_jug[i];
             for (int j = 0; j < num_pieces; j++)
             {
                 if (estado.isSafePiece(c, j))
@@ -200,9 +210,9 @@ double AIPlayer::ValoracionTest(const Parchis &estado, int jugador)
 
         // Recorro todas las fichas del oponente
         int puntuacion_oponente = 0;
-        for (int i = 0; i < op_colors.size(); i++)
+        for (int i = 0; i < colores_opo.size(); i++)
         {
-            color c = op_colors[i];
+            color c = colores_opo[i];
             for (int j = 0; j < num_pieces; j++)
             {
                 if (estado.isSafePiece(c, j))
@@ -230,8 +240,8 @@ double AIPlayer::evaluacion_solo_distancias(const Parchis &estado, int jugador)
     //cerr << "----------------- EVALUANDO ACCION -----------------" << endl;
     //cerr << "Color: " << get<0>(estado.getLastAction()) << " Ficha: " << get<1>(estado.getLastAction()) << " Dado: " << get<2>(estado.getLastAction()) << endl << endl;
     // Calculo la media de las distancias a la meta de cada color
-    vector<color> my_colors = estado.getPlayerColors(jugador);
-    vector<color> op_colors = estado.getPlayerColors(oponente);
+    vector<color> colores_jug = estado.getPlayerColors(jugador);
+    vector<color> colores_opo = estado.getPlayerColors(oponente);
     vector<double> media_avance_color(4, 0);
     double puntuacion_distancia_jugador = 0, puntuacion_distancia_oponente = 0;
 
@@ -247,15 +257,15 @@ double AIPlayer::evaluacion_solo_distancias(const Parchis &estado, int jugador)
     }
 
     // JUGADOR
-    double media_color_adelantado_jug = NUM_TOTAL_CASILLAS - min(media_avance_color[my_colors[0]], media_avance_color[my_colors[1]]);
-    double media_color_atrasado_jug = NUM_TOTAL_CASILLAS - max(media_avance_color[my_colors[0]], media_avance_color[my_colors[1]]);
+    double media_color_adelantado_jug = NUM_TOTAL_CASILLAS - min(media_avance_color[colores_jug[0]], media_avance_color[colores_jug[1]]);
+    double media_color_atrasado_jug = NUM_TOTAL_CASILLAS - max(media_avance_color[colores_jug[0]], media_avance_color[colores_jug[1]]);
     puntuacion_distancia_jugador = media_color_adelantado_jug*PESO_COLOR_ADELANTADO + media_color_atrasado_jug*PENALIZACION_COLOR_ATRASADO;
     //cerr << "Media jugador adelantado: " << media_color_adelantado_jug << " Media jugador atrasado: " << media_color_atrasado_jug << endl;
     //cerr << "Puntuacion distancia jugador: " << puntuacion_distancia_jugador << endl;
 
     // OPONENTE
-    double media_color_adelantado_opo = NUM_TOTAL_CASILLAS - min(media_avance_color[op_colors[0]], media_avance_color[op_colors[1]]);
-    double media_color_atrasado_opo = NUM_TOTAL_CASILLAS - max(media_avance_color[op_colors[0]], media_avance_color[op_colors[1]]);
+    double media_color_adelantado_opo = NUM_TOTAL_CASILLAS - min(media_avance_color[colores_opo[0]], media_avance_color[colores_opo[1]]);
+    double media_color_atrasado_opo = NUM_TOTAL_CASILLAS - max(media_avance_color[colores_opo[0]], media_avance_color[colores_opo[1]]);
     puntuacion_distancia_oponente = media_color_adelantado_opo*PESO_COLOR_ADELANTADO + media_color_atrasado_opo*PENALIZACION_COLOR_ATRASADO;
     //cerr << "Media oponente adelantado: " << media_color_adelantado_opo << " Media oponente atrasado: " << media_color_atrasado_opo << endl;
     //cerr << "Puntuacion distancia oponente: " << puntuacion_distancia_oponente << endl;
@@ -272,8 +282,8 @@ double AIPlayer::evaluacion_optima(const Parchis &estado, int jugador)
     double puntuacion_final = 0;
     int ganador = estado.getWinner();
     int oponente = (jugador+1) % 2;
-    vector<color> my_colors = estado.getPlayerColors(jugador);
-    vector<color> op_colors = estado.getPlayerColors(oponente);
+    vector<color> colores_jug = estado.getPlayerColors(jugador);
+    vector<color> colores_opo = estado.getPlayerColors(oponente);
 
     // -------------------------------------------------------------------------------------------
     // EN CASO DE GANAR / PERDER O ENERGIA
@@ -287,29 +297,31 @@ double AIPlayer::evaluacion_optima(const Parchis &estado, int jugador)
     double extra_por_ficha_en_meta = gana / num_pieces;
     for (int i = 0; i < num_pieces; i++)
     {
-        if (estado.getBoard().getPiece(my_colors[0], i).get_box().type == goal)
+        if (estado.getBoard().getPiece(colores_jug[0], i).get_box().type == goal)
             puntuacion_final += extra_por_ficha_en_meta;
-        if (estado.getBoard().getPiece(my_colors[1], i).get_box().type == goal)
+        if (estado.getBoard().getPiece(colores_jug[1], i).get_box().type == goal)
             puntuacion_final += extra_por_ficha_en_meta;
-        if (estado.getBoard().getPiece(op_colors[0], i).get_box().type == goal)
+        if (estado.getBoard().getPiece(colores_opo[0], i).get_box().type == goal)
             puntuacion_final -= extra_por_ficha_en_meta;
-        if (estado.getBoard().getPiece(op_colors[1], i).get_box().type == goal)
+        if (estado.getBoard().getPiece(colores_opo[1], i).get_box().type == goal)
             puntuacion_final -= extra_por_ficha_en_meta;
     }
+
+    //cerr << "Puntuación final tras metas: " << puntuacion_final << endl;
 
     // -------------------------------------------------------------------------------------------
     // PUNTUACIÓN SEGÚN AVANCE
 
     vector<double> media_avance_color = medias_avance_colores(estado);
-    color color_adelantado_jug = media_avance_color[my_colors[0]] < media_avance_color[my_colors[1]] ? my_colors[0] : my_colors[1];
-    color color_atrasado_jug = color_adelantado_jug == my_colors[0] ? my_colors[1] : my_colors[0];
-    color color_adelantado_opo = media_avance_color[op_colors[0]] < media_avance_color[op_colors[1]] ? op_colors[0] : op_colors[1];
-    color color_atrasado_opo = color_adelantado_opo == op_colors[0] ? op_colors[1] : op_colors[0];
+    color color_adelantado_jug = media_avance_color[colores_jug[0]] > media_avance_color[colores_jug[1]] ? colores_jug[0] : colores_jug[1];
+    color color_atrasado_jug = color_adelantado_jug == colores_jug[0] ? colores_jug[1] : colores_jug[0];
+    color color_adelantado_opo = media_avance_color[colores_opo[0]] > media_avance_color[colores_opo[1]] ? colores_opo[0] : colores_opo[1];
+    color color_atrasado_opo = color_adelantado_opo == colores_opo[0] ? colores_opo[1] : colores_opo[0];
 
     double puntuacion_distancia_jugador = media_avance_color[color_adelantado_jug]*PESO_COLOR_ADELANTADO + media_avance_color[color_atrasado_jug]*PENALIZACION_COLOR_ATRASADO;
     double puntuacion_distancia_oponente = media_avance_color[color_adelantado_opo]*PESO_COLOR_ADELANTADO + media_avance_color[color_atrasado_opo]*PENALIZACION_COLOR_ATRASADO;
 
-    puntuacion_final = (puntuacion_distancia_jugador - puntuacion_distancia_oponente);
+    puntuacion_final += (puntuacion_distancia_jugador - puntuacion_distancia_oponente);
 
     ////cerr << "\n\ttJUG adelantado: " << media_color_adelantado_jug << " JUG atrasado: " << media_color_atrasado_jug << endl;
     //cerr << "\tPuntuacion distancia jugador: " << puntuacion_distancia_jugador << endl;
@@ -320,12 +332,24 @@ double AIPlayer::evaluacion_optima(const Parchis &estado, int jugador)
     //cerr << "Puntuación final tras distancia: " << puntuacion_final << endl << endl;
 
     // -------------------------------------------------------------------------------------------
+    // PUNTUACION RIESGO
+
+    //vector<double> media_peligro_color = media_peligro_colores(estado);
+    //double puntuacion_peligro_jugador = media_peligro_color[color_adelantado_jug]*PESO_COLOR_ADELANTADO + media_peligro_color[color_atrasado_jug]*PENALIZACION_COLOR_ATRASADO;
+    //double puntuacion_peligro_oponente = media_peligro_color[color_adelantado_opo]*PESO_COLOR_ADELANTADO + media_peligro_color[color_atrasado_opo]*PENALIZACION_COLOR_ATRASADO;
+    //puntuacion_final -= (puntuacion_peligro_jugador - puntuacion_peligro_oponente);
+
+    //cerr << "\\tPuntuacion peligro jugador: " << puntuacion_peligro_jugador << endl;
+    //cerr << "\tPuntuacion peligro oponente: " << puntuacion_peligro_oponente << endl;
+
+    //cerr << "Puntuación final tras peligro: " << puntuacion_final << endl << endl;
+
+    // -------------------------------------------------------------------------------------------
     // PUNTUACION POR DADOS DISPONIBLES
 
-    const double media_dados_disponibles_jug = media_dados_disponibles(estado, jugador);
-    const double media_dados_disponibles_opo = media_dados_disponibles(estado, oponente);
-
-    puntuacion_final += (media_dados_disponibles_jug - media_dados_disponibles_opo);
+    //const double media_dados_disponibles_jug = media_dados_disponibles(estado, jugador);
+    //const double media_dados_disponibles_opo = media_dados_disponibles(estado, oponente);
+    //puntuacion_final += (media_dados_disponibles_jug - media_dados_disponibles_opo);
 
     //cerr << "\tMedia dados disponibles jugador: " << media_dados_disponibles_jug << endl;
     //cerr << "\tMedia dados disponibles oponente: " << media_dados_disponibles_opo << endl;
@@ -333,24 +357,13 @@ double AIPlayer::evaluacion_optima(const Parchis &estado, int jugador)
     //cerr << "Puntuación final tras dados: " << puntuacion_final << endl << endl;
 
     // -------------------------------------------------------------------------------------------
-    // PUNTUACION RIESGO
-
-    vector<double> media_peligro_color = media_peligro_colores(estado);
-
-    double puntuacion_peligro_jugador = media_peligro_color[color_adelantado_jug]*PESO_COLOR_ADELANTADO + media_peligro_color[color_atrasado_jug]*PENALIZACION_COLOR_ATRASADO;
-    double puntuacion_peligro_oponente = media_peligro_color[color_adelantado_opo]*PESO_COLOR_ADELANTADO + media_peligro_color[color_atrasado_opo]*PENALIZACION_COLOR_ATRASADO;
-
-    puntuacion_final = (puntuacion_peligro_jugador - puntuacion_peligro_oponente);
-
-    // -------------------------------------------------------------------------------------------
 
     // QUIESCENCIA
     // la razón por la que uso el mejor dado del opo es porque le estoy "robando" un turno
-    const double extra_por_seis = estado.getLastDice() == 6 ? mejor_dado_disponible(estado, oponente) : 0;
-    const unsigned char extra_por_comer = estado.isEatingMove() ? 20 + mejor_dado_disponible(estado, oponente) : 0;
-    //const unsigned char extra_por_barrera = estado. ? 10 + mejor_dado_disponible(estado, oponente) : 0;
-
-    puntuacion_final += extra_por_comer + extra_por_seis;
+    //const unsigned char extra_por_barrera = estado.w ? 10 + mejor_dado_disponible(estado, oponente) : 0;
+    //const double extra_por_seis = estado.getLastDice() == 6 ? mejor_dado_disponible(estado, oponente) : 0;
+    //const unsigned char extra_por_comer = estado.isEatingMove() ? 20 + mejor_dado_disponible(estado, oponente) : 0;
+    //puntuacion_final += extra_por_comer + extra_por_seis;
 
     //if (extra_por_comer)
     //    cerr << ">>>>>>>>>>>>>>>>>>> Puntuacion extra por comer" << endl;
@@ -363,11 +376,12 @@ double AIPlayer::evaluacion_optima(const Parchis &estado, int jugador)
     return puntuacion_final;
 }
 
-unordered_set<int> AIPlayer::piezas_comibles(const Parchis &estado, const int jugador)
+unordered_set<int> AIPlayer::piezas_comibles(const Parchis &estado)
 {
+    int jugador = estado.getCurrentPlayerId();
     int oponente = (jugador+1) % 2;
-    vector<color> my_colors = estado.getPlayerColors(jugador);
-    vector<color> op_colors = estado.getPlayerColors(oponente);
+    vector<color> colores_jug = estado.getPlayerColors(jugador);
+    vector<color> colores_opo = estado.getPlayerColors(oponente);
 
     unordered_set<int> comibles;
     ParchisBros hijos = estado.getChildren();
@@ -378,7 +392,7 @@ unordered_set<int> AIPlayer::piezas_comibles(const Parchis &estado, const int ju
     {
         if ((*it).isEatingMove())
         {
-            int pos_pieza_comida = estado.getBoard().getPiece(it.getMovedColor(), it.getMovedPieceId()).get_box().num;
+            int pos_pieza_comida = (*it).getBoard().getPiece(it.getMovedColor(), it.getMovedPieceId()).get_box().num;
             comibles.insert(pos_pieza_comida);
         }
     }
@@ -407,67 +421,63 @@ double AIPlayer::mejor_dado_disponible(const Parchis &estado, const int jugador)
 vector<double> AIPlayer::medias_avance_colores(const Parchis &estado)
 {
     vector<double> media_avance_color(4, 0);
-    unordered_set<int> comibles = piezas_comibles(estado, estado.getCurrentPlayerId());
-
     for (int c = 0; c < 4; c++)
     {
         for (int i = 0; i < num_pieces; i++)
-        {
-            ////cerr << "\t - Avance ficha [" << c << ", " << i << "]: " <<  NUM_TOTAL_CASILLAS - estado.distanceToGoal((color) c, i) << endl;
-            if (comibles.find(estado.getBoard().getPiece((color) c, i).get_box().num) == comibles.end())
                 media_avance_color[c] += (NUM_TOTAL_CASILLAS - estado.distanceToGoal((color) c, i));
-            else
-            {
-                media_avance_color[c] -= 20 + mejor_dado_disponible(estado, estado.getCurrentPlayerId());
-                //cerr << ">>>>>>>>>>>>>>>> Ficha [" << c << ", " << i << "] es comible" << endl;
-            }
-        }
+
         media_avance_color[c] /= num_pieces;
         //cerr << "\tMedia color " << c << ": " << media_avance_color[c] << endl;
     }
-
     return media_avance_color;
 }
 
 vector<double> AIPlayer::media_peligro_colores(const Parchis &estado)
 {
     int jugador = estado.getCurrentPlayerId();
-    int oponente = (estado.getCurrentPlayerId()+1) % 2;
-    vector<color> colores_jug = estado.getPlayerColors(jugador);
+    int oponente = (jugador+1) % 2;
     vector<double> media_peligro_color(4, 0);
-    unordered_set<int> comibles = piezas_comibles(estado, jugador);
+    unordered_set<int> comibles = piezas_comibles(estado);
+    int dist_opo_mas_peligroso;
 
-    for (int c_jug = 0; c_jug < 4; c_jug++)
+    for (int c = 0; c < 4; c++)
     {
-        int jug_actual = c_jug == colores_jug[0] or c_jug == colores_jug[1] ? jugador : oponente;
-        int opo_actual = jug_actual == jugador ? oponente : jugador;
-
-        for (int id_jug = 0; id_jug < num_pieces; id_jug++)
+        for (int id = 0; id < num_pieces; id++)
         {
-            // Si es casilla comible devuelvo su valor íntegro que es lo que voy a perder
-            if (comibles.find(estado.getBoard().getPiece((color) c_jug, id_jug).get_box().num) != comibles.end())
+            int valor_ficha = NUM_TOTAL_CASILLAS - estado.distanceToGoal((color) c, id);
+
+            if (comibles.find(estado.getBoard().getPiece((color) c, id).get_box().num) != comibles.end())
             {
-                media_peligro_color[c_jug] += NUM_TOTAL_CASILLAS - estado.distanceToGoal((color) c_jug, id_jug);
+                media_peligro_color[c] += valor_ficha + 20 + mejor_dado_disponible(estado, oponente);
             }
-            else
+            else if ((dist_opo_mas_peligroso = distancia_enemigo_mas_cercano(estado, (color) c, id)) != -1)
             {
-                int distancia_enemigo_mas_peligroso = -1;
-                const vector<color> colores_opo = estado.getPlayerColors(opo_actual);
-                for (color c_opo : colores_opo)
-                {
-                    for (int id_opo = 0; id_opo < num_pieces; id_opo++)
-                    {
-                        int distancia_enemigo_i = estado.distanceBoxtoBox(c_opo, estado.getBoard().getPiece(c_opo, id_opo).get_box(), c_jug, estado.getBoard().getPiece((color) c_jug, id_jug).get_box());
-                        if (distancia_enemigo_mas_peligroso > distancia_enemigo_i)
-                            distancia_enemigo_mas_peligroso = distancia_enemigo_i;
-                    }
-                }
-                if (distancia_enemigo_mas_peligroso != -1)
-                    media_peligro_color[c_jug] += (NUM_TOTAL_CASILLAS - estado.distanceToGoal((color) c_jug, id_jug)) * // RATIO * distancia_mas_peligroso
+                double turnos_opo_mas_peligroso = max(5.0, dist_opo_mas_peligroso / 10.0);
+                media_peligro_color[c] += valor_ficha - (valor_ficha * 0.2 * turnos_opo_mas_peligroso);
             }
         }
-        media_peligro_color[c_jug] /= num_pieces;
+        media_peligro_color[c] /= num_pieces;
+    }
+    return media_peligro_color;
+}
+
+int AIPlayer::distancia_enemigo_mas_cercano(const Parchis &estado, const color c_jug, const int id_jug)
+{
+    int distancia_enemigo_mas_cercano = -1;
+    const vector<color> colores_opo = c_jug % 2 != 0 ? vector<color>{blue, green} : vector<color>{red, yellow};
+
+    for (color c_opo : colores_opo)
+    {
+        for (int id_opo = 0; id_opo < num_pieces; id_opo++)
+        {
+            const Box &box_jug = estado.getBoard().getPiece(c_jug, id_jug).get_box();
+            const Box &box_opo = estado.getBoard().getPiece(c_opo, id_opo).get_box();
+            int distancia_enemigo_i = estado.distanceBoxtoBox(c_jug, box_opo, box_jug);
+
+            if (distancia_enemigo_mas_cercano > distancia_enemigo_i or distancia_enemigo_mas_cercano != -1)
+                distancia_enemigo_mas_cercano = distancia_enemigo_i;
+        }
     }
 
-    return media_peligro_color;
+    return distancia_enemigo_mas_cercano;
 }
