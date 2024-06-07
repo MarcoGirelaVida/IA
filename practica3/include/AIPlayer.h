@@ -8,6 +8,8 @@
 #include <utility>
 #include <vector>
 #include <unordered_set>
+#include <list>
+
 using namespace std;
 
 struct movimiento
@@ -21,6 +23,7 @@ struct movimiento
         return c == m.c && id == m.id && dado == m.dado;
     }
 };
+/*
 struct ordenador_estados
 {
     bool operator()(const Parchis &a, const Parchis &b) const;
@@ -29,7 +32,7 @@ struct ordenador_estados
 };
 
 typedef priority_queue<tuple<double, Parchis, movimiento>, vector<tuple<double, Parchis, movimiento>>, ordenador_estados> cola_hijos_raiz;
-
+*/
 class AIPlayer: public Player{
     protected:
         //Id identificativo del jugador
@@ -105,7 +108,8 @@ class AIPlayer: public Player{
          * @return nota asignada al estado
          */
         static double evaluacion_optima(const Parchis &estado, int jugador);
-        static double evaluacion_solo_distancias(const Parchis &estado, int jugador);
+        //static double evaluacion_solo_distancias(const Parchis &estado, int jugador);
+        //static double evaluacion_excesivamente_compleja(const Parchis &estado, int jugador);
 
 
         /**
@@ -113,25 +117,29 @@ class AIPlayer: public Player{
          * La propuesta es solo sugerencia, los parámetros de la declaración podrían variar.
          */
         double alpha_beta(const Parchis &actual, double alpha, double beta, unsigned char profundidad_restante) const;
-        movimiento alpha_beta_raiz(const Parchis &actual, const unsigned char profundidad, cola_hijos_raiz &ultimos_mejores_movimientos) const;
+        movimiento alpha_beta_raiz(const Parchis &actual, const unsigned char profundidad) const;
 
 
-        static double media_dados_disponibles(const Parchis &estad, const int jugador);
-        static double mejor_dado_disponible(const Parchis &estado, const int jugador);
+        //static double media_dados_disponibles(const Parchis &estad, const int jugador);
+        //static double mejor_dado_disponible(const Parchis &estado, const int jugador);
 
-        static unordered_set<int> piezas_comibles(const Parchis &estado);
-        static vector<double> medias_avance_colores(const Parchis &estado);
+        //static vector<pair<color, int>> piezas_comibles(const Parchis &estado);
+        //static vector<double> medias_avance_colores(const Parchis &estado);
+        static double avance_color(const Parchis &estado, const int c);
+        static double media_avance_color(const Parchis &estado, const int c);
+        static vector<double> penalizacion_por_riesgo(const Parchis &estado, const list<pair<color, int>> &piezas_jug_amenaza, const list<pair<color, int>> &piezas_jug_vulnerable, const list<pair<color, int>> &piezas_opo_amenaza, const list<pair<color, int>> &piezas_opo_vulnerable);
+        //static vector<double> media_peligro_colores(const Parchis &estado);
+        //static int distancia_enemigo_mas_cercano(const Parchis &estado, const color c_jug, const int id_jug);
 
-        static vector<double> media_peligro_colores(const Parchis &estado);
-        static int distancia_enemigo_mas_cercano(const Parchis &estado, const color c_jug, const int id_jug);
 
 
+        //queue<Parchis> get_hijos_orden_dados(const Parchis &estado) const;
+        //priority_queue<Parchis, vector<Parchis>, ordenador_estados> get_hijos_orden_heuristica(const Parchis &estado) const;
+        //cola_hijos_raiz get_hijos_orden_dados_raiz(const Parchis &estado) const;
 
-        queue<Parchis> get_hijos_orden_dados(const Parchis &estado) const;
-        priority_queue<Parchis, vector<Parchis>, ordenador_estados> get_hijos_orden_heuristica(const Parchis &estado) const;
-        cola_hijos_raiz get_hijos_orden_dados_raiz(const Parchis &estado) const;
+        static bool is_goal(const Parchis &estado, const int c, const int id);
         //queue<pair<Parchis, movimiento>> get_hijos_orden_heristica_raiz(const Parchis &estado) const;
 
-        static void print_movimientos(const cola_hijos_raiz &ultimos_mejores_movimientos);
+        //static void print_movimientos(const cola_hijos_raiz &ultimos_mejores_movimientos);
 };
 #endif
