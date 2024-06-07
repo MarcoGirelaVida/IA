@@ -58,7 +58,7 @@ void AIPlayer::think(color & c_piece, int & id_piece, int & dice) const
     {
     case 0: heuristica = &ValoracionTest; break;
     //case 1: heuristica = &evaluacion_solo_distancias; break;
-    case 10: heuristica = &evaluacion_optima; break;
+    case 1: heuristica = &evaluacion_optima; break;
     default: cerr << "Error en la elección de la heurística" << endl; exit(1);
     }
 
