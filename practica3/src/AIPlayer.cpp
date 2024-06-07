@@ -379,10 +379,11 @@ double AIPlayer::evaluacion_optima(const Parchis &estado, int jugador)
     }
     piezas_opo_vulnerables = piezas_opo;
 
-    bool tiene_estrella_jug = false, tiene_estrella_opo = false;
+    //for (int c = 0; c < num_colores; c++)
+    //    puntuaciones_colores[c] += estado.piecesAtGoal((color) c) * PUNTOS_FICHA_EN_META;
+
     for (auto p = piezas_jug_vulnerables.begin(); p != piezas_jug_vulnerables.end();)
     {
-        tiene_estrella_jug = tiene_estrella_jug or estado.getBoard().getPiece(p->first, p->second).get_type() == star_piece;
         Box casilla = estado.getBoard().getPiece(p->first, p->second).get_box();
         if (casilla.type == goal)
         {
@@ -400,7 +401,6 @@ double AIPlayer::evaluacion_optima(const Parchis &estado, int jugador)
 
     for (auto p = piezas_opo_vulnerables.begin(); p != piezas_opo_vulnerables.end();)
     {
-        tiene_estrella_opo = tiene_estrella_opo or estado.getBoard().getPiece(p->first, p->second).get_type() == star_piece;
         Box casilla = estado.getBoard().getPiece(p->first, p->second).get_box();
         if (casilla.type == goal)
         {
@@ -424,7 +424,7 @@ double AIPlayer::evaluacion_optima(const Parchis &estado, int jugador)
 
     // -------------------------------------------------------------------------------------------
     // PUNTUACIÓN SEGÚN RIESGO
-    //tiene_estrella_jug = tiene_estrella_opo = false;
+    
     // Sumo el beneficio de tener casilla segura y elimino dichas casillas de las piezas
     for (auto p = piezas_jug_vulnerables.begin(); p != piezas_jug_vulnerables.end();)
     {
@@ -432,7 +432,7 @@ double AIPlayer::evaluacion_optima(const Parchis &estado, int jugador)
         if (estado.isSafeBox(casilla) or casilla.type != normal or estado.isWall(casilla) != none or estado.getBoard().getPiece(p->first, p->second).get_type() == star_piece)
         {
             puntuaciones_colores[p->first] += (NUM_TOTAL_CASILLAS - estado.distanceToGoal(p->first, p->first))*BENEFICIO_CASILLA_SEGURA;
-            p = tiene_estrella_opo ? piezas_jug_vulnerables.erase(p) : ++p;
+            p = piezas_jug_vulnerables.erase(p);
         }
         else
             ++p;
@@ -444,7 +444,7 @@ double AIPlayer::evaluacion_optima(const Parchis &estado, int jugador)
         if (estado.isSafeBox(casilla) or casilla.type != normal or estado.isWall(casilla) != none or estado.getBoard().getPiece(p->first, p->second).get_type() == star_piece)
         {
             puntuaciones_colores[p->first] += (NUM_TOTAL_CASILLAS - estado.distanceToGoal(p->first, p->first))*BENEFICIO_CASILLA_SEGURA;
-            p = tiene_estrella_jug ? piezas_opo_vulnerables.erase(p) : ++p;
+            p = piezas_opo_vulnerables.erase(p);
         }
         else
             ++p;
@@ -459,12 +459,12 @@ double AIPlayer::evaluacion_optima(const Parchis &estado, int jugador)
         puntuaciones_colores[colores_jug[1]] += estado.isEatingMove() ? BENEFICIO_COMER : 40;
     }
     //Sino calculo el riesgo de cada color según las piezas comibles
-    else
-    {
-        vector<double> riesgo_colores = penalizacion_por_riesgo(estado, piezas_jug, piezas_jug_vulnerables, piezas_opo, piezas_opo_vulnerables);
-        for (int c = 0; c < num_colores; c++)
-            puntuaciones_colores[c] -= riesgo_colores[c];
-    }
+    //else
+    //{
+    //    vector<double> riesgo_colores = penalizacion_por_riesgo(estado, piezas_jug, piezas_jug_vulnerables, piezas_opo, piezas_opo_vulnerables);
+    //    for (int c = 0; c < num_colores; c++)
+    //        puntuaciones_colores[c] -= riesgo_colores[c];
+    //}
     
     // -------------------------------------------------------------------------------------------
     // PONDERACIÓN POR JUGADORES
